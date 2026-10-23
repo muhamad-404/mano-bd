@@ -25,6 +25,13 @@
         <button type="button" @click="revealAllNotes">Reveal all</button>
         <button type="button" @click="resetNotes">Reset notes</button>
       </div>
+      <div class="dev-menu__row">
+        <button type="button" @click="jumpLevel(1)">Play L1</button>
+        <button type="button" @click="jumpLevel(2)">Play L2</button>
+        <button type="button" @click="jumpLevel(3)">Play L3</button>
+        <button type="button" @click="jumpLevel(4)">Play L4</button>
+        <button type="button" @click="forceWin">Complete level</button>
+      </div>
       <div class="dev-menu__scenes">
         <button
           v-for="scene in SCENES"
@@ -50,9 +57,11 @@ import {
   resetAll,
   resetNotes,
   revealAllNotes,
+  setCurrentLevel,
   setPreviewMode,
   useGameStore,
 } from '../../store/game.js'
+import { emit as bridgeEmit } from '../../game/bridge.js'
 import { formatKarachiDateTime, nowKarachi } from '../../utils/dates.js'
 
 const isDev = import.meta.env.DEV
@@ -73,6 +82,16 @@ function onPreview() {
 function onReset() {
   resetAll()
   goTo('gate')
+}
+
+function jumpLevel(id) {
+  setCurrentLevel(id)
+  goTo('level')
+  open.value = false
+}
+
+function forceWin() {
+  bridgeEmit('dev:force-complete')
 }
 
 function loop(ts) {

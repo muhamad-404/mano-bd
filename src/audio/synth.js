@@ -61,4 +61,8 @@ export function sparkle() {
   })
 }
 
-export default { unlock, pop, chime, whoosh, sparkle }
+export function softHit() {
+  tone({ freq: 140, type: 'sine', duration: 0.22, gain: 0.045, slideTo: 70 })
+}
+
+export default { unlock, pop, chime, whoosh, sparkle, softHit }

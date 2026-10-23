@@ -10,7 +10,7 @@
         </span>
         <h1 class="host__title">{{ level.title }}</h1>
         <p class="host__text">{{ level.text }}</p>
-        <p class="host__hint">Drag to move the basket</p>
+        <p class="host__hint">{{ level.config?.hint || 'Drag to move' }}</p>
         <p v-if="loadError" class="host__error">Could not load the game. Check your connection and try again.</p>
         <div v-if="loading" class="host__loading" aria-live="polite" aria-label="Loading">
           <span class="host__ring" />
@@ -26,9 +26,24 @@
       </GlassCard>
     </div>
 
-    <div v-if="playing" class="host__hud">
-      <div class="host__progress" aria-label="Level progress">
-        <span class="fa-grad-rose" aria-hidden="true"><FaIcon :icon="['fas', 'heart']" /></span>
+    <div v-if="playing && !arrival" class="host__hud">
+      <div v-if="progress.mode === 'distance'" class="host__distance" aria-label="Distance">
+        <div class="host__distance-track">
+          <div class="host__distance-fill" :style="{ transform: `scaleY(${progressRatio})` }" />
+          <span
+            class="host__distance-plane fa-grad-sky"
+            :style="{ bottom: `${progressRatio * 100}%` }"
+            aria-hidden="true"
+          >
+            <FaIcon :icon="['fas', 'paper-plane']" />
+          </span>
+        </div>
+        <span class="host__distance-label">{{ progress.value }}%</span>
+      </div>
+      <div v-else class="host__progress" aria-label="Level progress">
+        <span class="fa-grad-rose" aria-hidden="true">
+          <FaIcon :icon="['fas', progressIcon]" />
+        </span>
         <div class="host__bar">
           <div class="host__bar-fill" :style="{ transform: `scaleX(${progressRatio})` }" />
         </div>
@@ -45,6 +60,15 @@
       </GlassCard>
     </div>
 
+    <div v-if="arrival" class="host__arrival" role="dialog" aria-modal="true" aria-labelledby="arrival-title">
+      <GlassCard class="host__arrival-card">
+        <h2 id="arrival-title">{{ planeArrival.title }}</h2>
+        <p class="host__days">{{ counters.daysApart }}: {{ arrival.daysApart }}</p>
+        <p class="host__arrival-line">{{ planeArrival.line }}</p>
+        <PrimaryButton @click="onArrivalContinue">{{ planeArrival.cta }}</PrimaryButton>
+      </GlassCard>
+    </div>
+
     <p v-if="landscape" class="host__rotate" role="status">Turn your phone for the best view</p>
   </section>
 </template>
@@ -58,6 +82,7 @@ import { getLevel } from './levels.js'
 import { on as bridgeOn, off as bridgeOff, emit as bridgeEmit } from './bridge.js'
 import { goTo, useGameStore } from '../store/game.js'
 import { unlock } from '../audio/synth.js'
+import { counters, planeArrival } from '../content/story.js'
 
 const store = useGameStore()
 const parentEl = ref(null)
@@ -66,7 +91,8 @@ const loading = ref(false)
 const loadError = ref(false)
 const paused = ref(false)
 const landscape = ref(false)
-const progress = reactive({ value: 0, max: 8 })
+const arrival = ref(null)
+const progress = reactive({ value: 0, max: 8, mode: 'count' })
 
 let game = null
 let sceneKey = 'CatchHearts'
@@ -76,16 +102,49 @@ const progressRatio = computed(() => {
   if (!progress.max) return 0
   return Math.min(1, progress.value / progress.max)
 })
+const progressIcon = computed(() => {
+  if (level.value?.sceneKey === 'Storm') return 'star'
+  return 'heart'
+})
 
 function onProgress(payload) {
   if (!payload) return
   progress.value = payload.value
   progress.max = payload.max
+  progress.mode = payload.mode || 'count'
 }
 
 function onComplete() {
+  arrival.value = null
   destroyGame()
   goTo('reward')
+}
+
+function onArrival(payload) {
+  arrival.value = payload || { daysApart: 0 }
+  paused.value = false
+}
+
+function onArrivalContinue() {
+  const scene = game?.scene?.getScene(sceneKey)
+  arrival.value = null
+  if (scene?.finishAfterArrival) {
+    scene.finishAfterArrival()
+    return
+  }
+  onComplete()
+}
+
+function onLevelError() {
+  loadError.value = true
+  destroyGame()
+}
+
+function onForceComplete() {
+  if (!game) return
+  const scene = game.scene.getScene(sceneKey)
+  if (scene?.forceComplete) scene.forceComplete()
+  else if (scene?.finishAfterArrival) scene.finishAfterArrival()
 }
 
 function onVis() {
@@ -107,8 +166,10 @@ async function startLevel() {
     const { createGame } = await import('./createGame.js')
     destroyGame()
     progress.value = 0
-    progress.max = level.value.config.target || 8
+    progress.mode = level.value.sceneKey === 'PaperPlane' ? 'distance' : 'count'
+    progress.max = progress.mode === 'distance' ? 100 : level.value.config.target || 8
     sceneKey = level.value.sceneKey
+    arrival.value = null
     game = createGame(parentEl.value, {
       levelId: level.value.id,
       config: level.value.config,
@@ -136,6 +197,7 @@ function destroyGame() {
   }
   playing.value = false
   paused.value = false
+  arrival.value = null
   if (parentEl.value) parentEl.value.innerHTML = ''
 }
 
@@ -167,6 +229,9 @@ function backToMap() {
 onMounted(() => {
   bridgeOn('level:progress', onProgress)
   bridgeOn('level:complete', onComplete)
+  bridgeOn('level:error', onLevelError)
+  bridgeOn('level:arrival', onArrival)
+  bridgeOn('dev:force-complete', onForceComplete)
   document.addEventListener('visibilitychange', onVis)
   onOrient()
   window.addEventListener('orientationchange', onOrient)
@@ -176,6 +241,9 @@ onMounted(() => {
 onUnmounted(() => {
   bridgeOff('level:progress', onProgress)
   bridgeOff('level:complete', onComplete)
+  bridgeOff('level:error', onLevelError)
+  bridgeOff('level:arrival', onArrival)
+  bridgeOff('dev:force-complete', onForceComplete)
   document.removeEventListener('visibilitychange', onVis)
   window.removeEventListener('orientationchange', onOrient)
   window.removeEventListener('resize', onOrient)
@@ -186,6 +254,7 @@ onUnmounted(() => {
 <style scoped>
 .host {
   position: relative;
+  height: 100dvh;
   min-height: 100dvh;
   width: 100%;
   overflow: hidden;
@@ -197,6 +266,8 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   z-index: 1;
+  width: 100%;
+  height: 100%;
 }
 
 .host__canvas.is-live {
@@ -370,6 +441,86 @@ onUnmounted(() => {
 .host__pause-card h2 {
   margin: 0;
   font-family: var(--font-letter);
+}
+
+.host__distance {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.78);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.host__distance-track {
+  position: relative;
+  width: 10px;
+  height: 88px;
+  border-radius: 999px;
+  background: rgba(27, 21, 51, 0.12);
+  overflow: visible;
+}
+
+.host__distance-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  transform-origin: bottom center;
+  background: linear-gradient(180deg, #ff7ea8, #cdb8ff);
+  border-radius: inherit;
+}
+
+.host__distance-plane {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  font-size: 0.75rem;
+}
+
+.host__distance-label {
+  min-width: 2.5rem;
+}
+
+.host__arrival {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgba(27, 21, 51, 0.4);
+}
+
+.host__arrival-card {
+  max-width: 320px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.host__arrival-card h2 {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 1.6rem;
+  font-weight: 400;
+}
+
+.host__days {
+  margin: 0;
+  font-weight: 700;
+}
+
+.host__arrival-line {
+  margin: 0;
+  font-family: var(--font-letter);
+  font-size: 1.1rem;
+  line-height: 1.4;
 }
 
 .host__rotate {

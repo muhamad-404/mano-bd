@@ -23,6 +23,9 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.pool = []
     this.parallax = []
     this.fallScale = 1
+    this.moveSpeed = 1
+    this.bg = null
+    this.combo = 0
   }
 
   init(data = {}) {
@@ -33,15 +36,24 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.pausedLogic = false
     this.completing = false
     this.fallScale = 1
+    this.moveSpeed = 1
+    this.combo = 0
   }
 
   create() {
-    generateTextures(this)
-    this.createBackground()
-    this.createParallax()
-    this.createBasket()
-    this.bindInput()
-    this.emitProgress()
+    try {
+      generateTextures(this)
+      this.createBackground()
+      this.createDecor()
+      this.createParallax()
+      this.createBasket()
+      this.bindInput()
+      this.emitProgress()
+    } catch (err) {
+      console.error('[BaseLevelScene] create failed', err)
+      emit('level:error', { levelId: this.levelId, error: String(err) })
+      return
+    }
 
     this.events.on('pause', () => {
       this.pausedLogic = true
@@ -55,10 +67,13 @@ export default class BaseLevelScene extends Phaser.Scene {
 
   createBackground() {
     const key = PALETTE_BG[this.levelConfig.palette] || TEX.bgDawn
-    const bg = this.add.image(0, 0, key).setOrigin(0, 0)
-    bg.setDisplaySize(this.scale.width, this.scale.height)
-    bg.setDepth(-20)
+    this.bg = this.add.image(0, 0, key).setOrigin(0, 0)
+    this.bg.setDisplaySize(this.scale.width, this.scale.height)
+    this.bg.setDepth(-20)
   }
+
+  /** Override for level-specific static decoration */
+  createDecor() {}
 
   createParallax() {
     for (let i = 0; i < 6; i += 1) {
@@ -116,11 +131,57 @@ export default class BaseLevelScene extends Phaser.Scene {
   updateBasket(dt) {
     if (!this.basket) return
     const lerp = 1 - Math.pow(0.001, dt)
-    this.basket.x += (this.pointerX - this.basket.x) * Math.min(1, lerp * 14)
+    const rate = Math.min(1, lerp * 14 * this.moveSpeed)
+    this.basket.x += (this.pointerX - this.basket.x) * rate
     if (this.basketLabel) {
       this.basketLabel.x = this.basket.x
       this.basketLabel.y = this.basket.y + 6
     }
+  }
+
+  hitsBasket(item) {
+    if (!this.basket || !item) return false
+    const bw = this.basket.displayWidth * 0.72
+    const bh = this.basket.displayHeight * 0.45
+    const bx = this.basket.x - bw / 2
+    const by = this.basket.y - bh / 2
+    const hw = item.displayWidth * 0.55
+    const hh = item.displayHeight * 0.55
+    const hx = item.x - hw / 2
+    const hy = item.y - hh / 2
+    return hx < bx + bw && hx + hw > bx && hy < by + bh && hy + hh > by
+  }
+
+  sparkleAt(x, y) {
+    const burst = this.add.particles(x, y, TEX.sparkle, {
+      speed: { min: 20, max: 90 },
+      scale: { start: 0.55, end: 0 },
+      lifespan: 380,
+      quantity: 6,
+      emitting: false,
+    })
+    burst.explode(8)
+    this.time.delayedCall(420, () => burst.destroy())
+  }
+
+  squashBasket() {
+    if (!this.basket) return
+    this.tweens.add({
+      targets: this.basket,
+      scaleY: 0.45,
+      scaleX: 0.62,
+      duration: 80,
+      yoyo: true,
+      ease: 'sine.inOut',
+    })
+  }
+
+  /** Instant complete for DEV tools */
+  forceComplete() {
+    if (this.completing) return
+    this.progress = this.target
+    this.emitProgress()
+    this.complete()
   }
 
   updateParallax(dt) {

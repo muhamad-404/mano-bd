@@ -1,19 +1,20 @@
 import Phaser from 'phaser'
 import CatchHearts from './scenes/CatchHearts.js'
+import Storm from './scenes/Storm.js'
+import PaperPlane from './scenes/PaperPlane.js'
 
 const WIDTH = 390
 const HEIGHT = 720
 
 const SCENE_BY_KEY = {
   CatchHearts,
+  Storm,
+  PaperPlane,
 }
 
 /**
  * Create a Phaser game for one level. Imported dynamically from GameHost so
  * Phaser stays out of the initial Vue bundle until Start is tapped.
- *
- * DPR: Phaser 4 has no game-level `resolution`. We draw procedural textures at
- * 2x and cap Text resolution at 2; Scale.FIT handles layout.
  *
  * @param {HTMLElement} parent
  * @param {{ levelId: number, config: object, sceneKey: string }} options
@@ -21,16 +22,17 @@ const SCENE_BY_KEY = {
 export function createGame(parent, options) {
   const { levelId, config, sceneKey } = options
   const SceneClass = SCENE_BY_KEY[sceneKey] || CatchHearts
-  const key = SceneClass === CatchHearts ? 'CatchHearts' : sceneKey
+  const key = sceneKey in SCENE_BY_KEY ? sceneKey : 'CatchHearts'
 
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent,
     width: WIDTH,
     height: HEIGHT,
-    backgroundColor: '#00000000',
+    backgroundColor: 0x000000,
     transparent: true,
     antialias: true,
+    clearBeforeRender: true,
     audio: {
       noAudio: true,
     },
@@ -42,14 +44,25 @@ export function createGame(parent, options) {
       autoCenter: Phaser.Scale.CENTER_BOTH,
       width: WIDTH,
       height: HEIGHT,
+      parent,
     },
     input: {
       activePointers: 2,
     },
     scene: [],
+    callbacks: {
+      postBoot(g) {
+        g.scene.add(key, SceneClass, true, { levelId, config })
+        requestAnimationFrame(() => {
+          try {
+            g.scale.refresh()
+          } catch {
+            /* ignore */
+          }
+        })
+      },
+    },
   })
-
-  game.scene.add(key, SceneClass, true, { levelId, config })
 
   return game
 }

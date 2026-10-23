@@ -9,7 +9,7 @@
     </header>
 
     <div ref="scroller" class="quest__scroller">
-      <div class="quest__track" :style="{ height: `${trackH}px` }">
+      <div ref="trackEl" class="quest__track" :style="{ height: `${trackH}px` }">
         <svg class="quest__svg" :viewBox="`0 0 ${svgW} ${trackH}`" aria-hidden="true">
           <defs>
             <linearGradient id="quest-rose" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -18,10 +18,9 @@
             </linearGradient>
           </defs>
           <path
-            v-if="pathD"
             :d="pathD"
             fill="none"
-            stroke="rgba(27,21,51,0.18)"
+            stroke="rgba(27,21,51,0.22)"
             stroke-width="4"
             stroke-dasharray="8 10"
             stroke-linecap="round"
@@ -42,7 +41,7 @@
           type="button"
           class="quest__node"
           :class="[`is-${node.state}`, { 'anim-pulse-glow': node.state === 'available' }]"
-          :style="{ left: `${node.x}px`, top: `${node.y}px` }"
+          :style="nodeStyle(node)"
           :aria-label="node.aria"
           @click="onNode(node)"
         >
@@ -57,7 +56,7 @@
           :key="`card-${node.id}`"
           class="quest__card-wrap"
           :class="node.side"
-          :style="{ left: `${node.cardX}px`, top: `${node.cardY}px` }"
+          :style="cardStyle(node)"
         >
           <GlassCard class="quest__card" padding="12px">
             <span class="quest__chip">{{ node.dateLabel }}</span>
@@ -71,7 +70,7 @@
           v-if="allDone"
           type="button"
           class="quest__finale anim-pulse-glow"
-          :style="{ left: `${finale.x}px`, top: `${finale.y}px` }"
+          :style="finaleStyle"
           aria-label="The Birthday"
           @click="goTo('finale')"
         >
@@ -106,8 +105,11 @@ import { goTo, progressText, setCurrentLevel, useGameStore } from '../../store/g
 const store = useGameStore()
 const root = ref(null)
 const scroller = ref(null)
+const trackEl = ref(null)
 const svgW = 360
 const trackH = 980
+const trackWidth = ref(360)
+const points = ref([])
 const shakeMsg = ref('')
 let shakeTimer = 0
 
@@ -120,11 +122,14 @@ function measurePoints() {
   if (typeof document === 'undefined') return []
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   svg.setAttribute('viewBox', `0 0 ${svgW} ${trackH}`)
+  svg.setAttribute('width', String(svgW))
+  svg.setAttribute('height', String(trackH))
+  svg.style.cssText = 'position:absolute;left:-9999px;top:0;opacity:0;pointer-events:none'
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
   path.setAttribute('d', pathD)
   svg.appendChild(path)
   document.body.appendChild(svg)
-  const total = path.getTotalLength()
+  const total = path.getTotalLength() || 1
   const pts = lengths.map((t) => {
     const p = path.getPointAtLength(total * t)
     return { x: p.x, y: p.y, t }
@@ -133,7 +138,14 @@ function measurePoints() {
   return pts
 }
 
-const points = measurePoints()
+function syncTrackWidth() {
+  const w = trackEl.value?.clientWidth || scroller.value?.clientWidth || 360
+  trackWidth.value = Math.max(280, w)
+}
+
+function scaleX(x) {
+  return (x / svgW) * trackWidth.value
+}
 
 function nodeState(level) {
   const done = store.levelsCompleted.includes(level.id)
@@ -146,19 +158,16 @@ function nodeState(level) {
 
 const nodes = computed(() =>
   levels.map((level, i) => {
-    const pt = points[i] || { x: 180, y: 100 + i * 200 }
+    const pt = points.value[i] || { x: 180, y: 120 + i * 200 }
     const state = nodeState(level)
     const side = pt.x < svgW / 2 ? 'right' : 'left'
     const icon =
       state === 'done' ? 'circle-check' : state === 'locked' || state === 'soon' ? 'lock' : level.icon
-    let toast = ''
-    if (state === 'soon') toast = 'Coming soon'
+    const toast = state === 'soon' ? 'Coming soon' : ''
     return {
       ...level,
       x: pt.x,
       y: pt.y,
-      cardX: side === 'right' ? pt.x + 28 : pt.x - 188,
-      cardY: pt.y - 28,
       side,
       state,
       icon,
@@ -169,15 +178,40 @@ const nodes = computed(() =>
   }),
 )
 
+function nodeStyle(node) {
+  return {
+    left: `${scaleX(node.x)}px`,
+    top: `${node.y}px`,
+  }
+}
+
+function cardStyle(node) {
+  const nx = scaleX(node.x)
+  const cardW = 150
+  const left = node.side === 'right' ? nx + 34 : nx - cardW - 34
+  return {
+    left: `${Math.max(0, Math.min(left, trackWidth.value - cardW))}px`,
+    top: `${node.y - 28}px`,
+    width: `${cardW}px`,
+  }
+}
+
+const finaleStyle = computed(() => ({
+  left: `${scaleX(180)}px`,
+  top: `${trackH - 70}px`,
+}))
+
 const donePathD = computed(() => {
-  const doneCount = store.levelsCompleted.length
+  const doneCount = store.levelsCompleted.filter((id) => id >= 1 && id <= 4).length
   if (doneCount <= 0 || typeof document === 'undefined') return ''
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('width', String(svgW))
+  svg.setAttribute('height', String(trackH))
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
   path.setAttribute('d', pathD)
   svg.appendChild(path)
   document.body.appendChild(svg)
-  const total = path.getTotalLength()
+  const total = path.getTotalLength() || 1
   const endT = lengths[Math.min(doneCount, lengths.length) - 1]
   const end = total * endT
   const step = 8
@@ -191,11 +225,6 @@ const donePathD = computed(() => {
 })
 
 const allDone = computed(() => levels.every((l) => store.levelsCompleted.includes(l.id)))
-
-const finale = computed(() => ({
-  x: 180,
-  y: trackH - 70,
-}))
 
 function currentFocusId() {
   const available = nodes.value.find((n) => n.state === 'available')
@@ -246,7 +275,15 @@ function onNode(node) {
   }
 }
 
+function onResize() {
+  syncTrackWidth()
+}
+
 onMounted(async () => {
+  points.value = measurePoints()
+  await nextTick()
+  syncTrackWidth()
+  window.addEventListener('resize', onResize, { passive: true })
   await nextTick()
   scrollToCurrent()
 })
@@ -256,20 +293,30 @@ watch(
   () => nextTick(scrollToCurrent),
 )
 
-onUnmounted(() => clearTimeout(shakeTimer))
+onUnmounted(() => {
+  clearTimeout(shakeTimer)
+  window.removeEventListener('resize', onResize)
+})
 </script>
 
 <style scoped>
 .quest {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
   min-height: 100dvh;
-  padding: calc(var(--space-4) + var(--safe-top)) var(--space-4) calc(var(--space-4) + var(--safe-bottom));
+  padding: calc(var(--space-7) + var(--safe-top) + 44px) var(--space-4) calc(var(--space-4) + var(--safe-bottom));
   box-sizing: border-box;
   color: var(--color-night);
+  overflow: hidden;
 }
 
 .quest__header {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -293,11 +340,12 @@ onUnmounted(() => clearTimeout(shakeTimer))
 }
 
 .quest__scroller {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  margin: 0 calc(var(--space-4) * -1);
-  padding: 0 var(--space-4);
 }
 
 .quest__track {
@@ -305,6 +353,8 @@ onUnmounted(() => clearTimeout(shakeTimer))
   width: 100%;
   max-width: 360px;
   margin: 0 auto;
+  /* In-flow spacer so absolute kids do not collapse the track width */
+  min-width: 280px;
 }
 
 .quest__svg {
@@ -356,8 +406,8 @@ onUnmounted(() => clearTimeout(shakeTimer))
 
 .quest__card-wrap {
   position: absolute;
-  width: 160px;
   z-index: 1;
+  box-sizing: border-box;
 }
 
 .quest__card {
@@ -412,10 +462,12 @@ onUnmounted(() => clearTimeout(shakeTimer))
 }
 
 .quest__links {
+  flex: 0 0 auto;
   display: flex;
   gap: var(--space-3);
   justify-content: center;
   padding-top: var(--space-3);
+  width: 100%;
 }
 
 .quest__link {

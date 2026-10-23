@@ -81,3 +81,11 @@ export const finale = {
   voiceNoteButton: 'Play my voice note',
   voiceNotePause: 'Pause voice note',
 }
+
+export const planeArrival = {
+  // TODO_AHSAN: replace with your words
+  title: 'Until we meet again',
+  // TODO_AHSAN: replace with your words
+  line: 'Every mile between us is temporary. I am already on my way back to you in every quiet hour.',
+  cta: 'Continue',
+}

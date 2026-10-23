@@ -10,23 +10,26 @@ export const TEX = {
   bgEvening: 'mano-bg-evening',
   bgStorm: 'mano-bg-storm',
   bgNight: 'mano-bg-night',
+  rain: 'mano-rain',
+  starsFar: 'mano-stars-far',
+  starsNear: 'mano-stars-near',
 }
 
 function drawHeart(g, cx, cy, s) {
+  // Phaser 4 Graphics has no bezierCurveTo — two lobes + triangle tip.
   g.fillStyle(0xff7ea8, 1)
-  g.beginPath()
-  g.moveTo(cx, cy + s * 0.35)
-  g.bezierCurveTo(cx - s * 0.9, cy - s * 0.1, cx - s * 0.55, cy - s * 0.85, cx, cy - s * 0.35)
-  g.bezierCurveTo(cx + s * 0.55, cy - s * 0.85, cx + s * 0.9, cy - s * 0.1, cx, cy + s * 0.35)
-  g.closePath()
-  g.fillPath()
-
+  g.fillCircle(cx - s * 0.28, cy - s * 0.18, s * 0.34)
+  g.fillCircle(cx + s * 0.28, cy - s * 0.18, s * 0.34)
+  g.fillTriangle(
+    cx - s * 0.58,
+    cy - s * 0.02,
+    cx + s * 0.58,
+    cy - s * 0.02,
+    cx,
+    cy + s * 0.48,
+  )
   g.fillStyle(0xffc9d9, 0.55)
-  g.beginPath()
-  g.moveTo(cx - s * 0.18, cy - s * 0.2)
-  g.bezierCurveTo(cx - s * 0.4, cy - s * 0.45, cx - s * 0.05, cy - s * 0.55, cx - s * 0.05, cy - s * 0.28)
-  g.closePath()
-  g.fillPath()
+  g.fillCircle(cx - s * 0.34, cy - s * 0.28, s * 0.12)
 }
 
 function drawStar(g, cx, cy, r, color, alpha = 1) {
@@ -148,9 +151,10 @@ export function generateTextures(scene) {
     [1, '#e8d9ff'],
   ])
   bakeGradient(scene, TEX.bgEvening, [
-    [0, '#ffb4c8'],
-    [0.5, '#cdb8ff'],
-    [1, '#1b1533'],
+    [0, '#ff9a6b'],
+    [0.35, '#ff7ea8'],
+    [0.7, '#cdb8ff'],
+    [1, '#4a3a78'],
   ])
   bakeGradient(scene, TEX.bgStorm, [
     [0, '#9bb0d0'],
@@ -162,6 +166,31 @@ export function generateTextures(scene) {
     [0.55, '#1b1533'],
     [1, '#0d0a1a'],
   ])
+
+  bake(scene, TEX.rain, 4, 16, (g) => {
+    g.fillStyle(0xbfe3ff, 0.55)
+    g.fillRect(1, 0, 2, 14)
+  })
+
+  bakeStarfield(scene, TEX.starsFar, 256, 256, 40, 0.35)
+  bakeStarfield(scene, TEX.starsNear, 256, 256, 28, 0.7)
+}
+
+function bakeStarfield(scene, key, w, h, count, alpha) {
+  if (scene.textures.exists(key)) return
+  const canvas = scene.textures.createCanvas(key, w, h)
+  const ctx = canvas.getContext()
+  ctx.clearRect(0, 0, w, h)
+  for (let i = 0; i < count; i += 1) {
+    const x = Math.random() * w
+    const y = Math.random() * h
+    const r = 0.6 + Math.random() * 1.4
+    ctx.fillStyle = `rgba(255, 246, 238, ${alpha * (0.4 + Math.random() * 0.6)})`
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  canvas.refresh()
 }
 
 export default generateTextures
