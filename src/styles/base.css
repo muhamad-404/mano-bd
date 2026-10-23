@@ -31,6 +31,59 @@ body {
 
 #app {
   min-height: 100dvh;
+  position: relative;
+  isolation: isolate;
+}
+
+.screen {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
+  padding: var(--space-5);
+  padding-top: calc(var(--space-5) + var(--safe-top));
+  padding-right: calc(var(--space-5) + var(--safe-right));
+  padding-bottom: calc(var(--space-5) + var(--safe-bottom));
+  padding-left: calc(var(--space-5) + var(--safe-left));
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 12px 36px rgba(27, 21, 51, 0.12);
+}
+
+html.is-low-end .glass {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.stack-sm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.stack-lg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
 }
 
 .no-select {
@@ -41,6 +94,26 @@ body {
 button {
   touch-action: manipulation;
   font-family: inherit;
+}
+
+.fa-grad-rose svg path,
+.fa-grad-rose path {
+  fill: url(#grad-rose);
+}
+
+.fa-grad-lavender svg path,
+.fa-grad-lavender path {
+  fill: url(#grad-lavender);
+}
+
+.fa-grad-gold svg path,
+.fa-grad-gold path {
+  fill: url(#grad-gold);
+}
+
+.fa-grad-sky svg path,
+.fa-grad-sky path {
+  fill: url(#grad-sky);
 }
 
 @media (prefers-reduced-motion: reduce) {

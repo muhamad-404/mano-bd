@@ -1,1 +1,91 @@
-/* Animation utilities added in later phases. */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes press-scale {
+  to {
+    transform: scale(0.96);
+  }
+}
+
+.anim-float {
+  animation: float 5.5s var(--ease-in-out) infinite;
+}
+
+.anim-pulse-glow {
+  animation: pulse-glow 2.4s var(--ease-in-out) infinite;
+}
+
+.anim-twinkle {
+  animation: twinkle 3.2s var(--ease-in-out) infinite;
+}
+
+.anim-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 60%
+  );
+  transform: translateX(-120%);
+  animation: shimmer 2.8s var(--ease-out) infinite;
+  pointer-events: none;
+}
+
+.press-scale:active {
+  transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-float,
+  .anim-pulse-glow,
+  .anim-twinkle,
+  .anim-shimmer::after {
+    animation: none;
+  }
+
+  .anim-pulse-glow {
+    opacity: 1;
+    transform: none;
+  }
+}
