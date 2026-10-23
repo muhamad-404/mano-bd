@@ -1,18 +1,28 @@
 <template>
-  <div class="scratch" :style="{ width: `${width}px`, height: `${height}px` }">
-    <div class="scratch__note no-select">
-      <p class="scratch__text">{{ note.text }}</p>
+  <div class="scratch-wrap">
+    <div class="scratch" :style="{ width: `${width}px`, height: `${height}px` }">
+      <div class="scratch__note no-select">
+        <p class="scratch__text">{{ note.text }}</p>
+      </div>
+      <canvas
+        v-show="!cleared"
+        ref="canvasEl"
+        class="scratch__canvas"
+        :style="{ opacity: coatOpacity }"
+        @pointerdown="onDown"
+        @pointermove="onMove"
+        @pointerup="onUp"
+        @pointercancel="onUp"
+      />
     </div>
-    <canvas
-      v-show="!cleared"
-      ref="canvasEl"
-      class="scratch__canvas"
-      :style="{ opacity: coatOpacity }"
-      @pointerdown="onDown"
-      @pointermove="onMove"
-      @pointerup="onUp"
-      @pointercancel="onUp"
-    />
+    <button
+      v-if="showRevealBtn && !cleared"
+      type="button"
+      class="scratch__reveal"
+      @click="finishReveal"
+    >
+      Reveal
+    </button>
   </div>
 </template>
 
@@ -36,6 +46,7 @@ const store = useGameStore()
 const canvasEl = ref(null)
 const cleared = ref(false)
 const coatOpacity = ref(1)
+const showRevealBtn = ref(false)
 
 let ctx = null
 let drawing = false
@@ -43,7 +54,16 @@ let lastX = 0
 let lastY = 0
 let moveCount = 0
 let revealed = false
+let idleTimer = 0
 const brush = 22
+
+function armIdleReveal() {
+  clearTimeout(idleTimer)
+  if (revealed || cleared.value) return
+  idleTimer = window.setTimeout(() => {
+    if (!revealed && !cleared.value) showRevealBtn.value = true
+  }, 10000)
+}
 
 function setupCanvas() {
   const canvas = canvasEl.value
@@ -173,6 +193,7 @@ function maybeReveal() {
 function onDown(e) {
   if (revealed || cleared.value) return
   drawing = true
+  armIdleReveal()
   canvasEl.value.setPointerCapture(e.pointerId)
   const p = localPos(e)
   lastX = p.x
@@ -204,6 +225,7 @@ function onResize() {
 onMounted(async () => {
   await nextTick()
   setupCanvas()
+  armIdleReveal()
   window.addEventListener('resize', onResize, { passive: true })
   window.addEventListener('orientationchange', onResize, { passive: true })
 })
@@ -215,18 +237,40 @@ watch(
     cleared.value = false
     coatOpacity.value = 1
     revealed = false
+    showRevealBtn.value = false
     await nextTick()
     setupCanvas()
+    armIdleReveal()
   },
 )
 
 onUnmounted(() => {
+  clearTimeout(idleTimer)
   window.removeEventListener('resize', onResize)
   window.removeEventListener('orientationchange', onResize)
 })
 </script>
 
 <style scoped>
+.scratch-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.scratch__reveal {
+  min-height: 44px;
+  min-width: 120px;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  background: rgba(27, 21, 51, 0.88);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .scratch {
   position: relative;
   margin: 0 auto;

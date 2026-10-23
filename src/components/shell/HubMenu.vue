@@ -38,6 +38,21 @@
             <span class="hub__sub">{{ row.subtitle }}</span>
           </span>
         </button>
+
+        <button
+          type="button"
+          class="hub__row"
+          :aria-pressed="store.calmMode"
+          @click="onCalm"
+        >
+          <span class="hub__icon fa-grad-lavender" aria-hidden="true">
+            <FaIcon :icon="['fas', 'wand-magic-sparkles']" />
+          </span>
+          <span class="hub__copy">
+            <span class="hub__title">Calm mode</span>
+            <span class="hub__sub">{{ store.calmMode ? 'On — gentler motion' : 'Off — full motion' }}</span>
+          </span>
+        </button>
       </div>
     </div>
   </div>
@@ -47,7 +62,8 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import gsap from 'gsap'
 import IconButton from '../ui/IconButton.vue'
-import { goTo, progressText, useGameStore } from '../../store/game.js'
+import { goTo, progressText, toggleCalmMode, useGameStore } from '../../store/game.js'
+import { shouldReduceMotion } from '../../utils/motion.js'
 
 const store = useGameStore()
 const isOpen = ref(false)
@@ -113,7 +129,7 @@ function open() {
     const el = sheet.value
     if (!el) return
     el.focus()
-    if (store.reducedMotion) {
+    if (shouldReduceMotion()) {
       gsap.set(el, { y: 0, opacity: 1 })
       return
     }
@@ -127,7 +143,7 @@ function close() {
     isOpen.value = false
     if (lastFocus?.focus) lastFocus.focus()
   }
-  if (!el || store.reducedMotion) {
+  if (!el || shouldReduceMotion()) {
     finish()
     return
   }
@@ -144,6 +160,10 @@ function onSelect(row) {
   if (row.disabled) return
   goTo(row.scene)
   close()
+}
+
+function onCalm() {
+  toggleCalmMode()
 }
 
 function onKey(e) {

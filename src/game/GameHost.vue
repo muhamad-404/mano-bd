@@ -1,5 +1,5 @@
 <template>
-  <section class="host">
+  <section class="host game-surface">
     <div ref="parentEl" class="host__canvas" :class="{ 'is-live': playing }" />
 
     <div v-if="!playing" class="host__overlay">
@@ -11,7 +11,7 @@
         <h1 class="host__title">{{ level.title }}</h1>
         <p class="host__text">{{ level.text }}</p>
         <p class="host__hint">{{ level.config?.hint || 'Drag to move' }}</p>
-        <p v-if="loadError" class="host__error">Could not load the game. Check your connection and try again.</p>
+        <p v-if="loadError" class="host__error">{{ loadErrorMsg }}</p>
         <div v-if="loading" class="host__loading" aria-live="polite" aria-label="Loading">
           <span class="host__ring" />
         </div>
@@ -89,6 +89,7 @@ const parentEl = ref(null)
 const playing = ref(false)
 const loading = ref(false)
 const loadError = ref(false)
+const loadErrorMsg = ref('Could not load the game. Check your connection and try again.')
 const paused = ref(false)
 const landscape = ref(false)
 const arrival = ref(null)
@@ -162,15 +163,24 @@ async function startLevel() {
   unlock()
   loading.value = true
   loadError.value = false
+  loadErrorMsg.value = 'Could not load the game. Check your connection and try again.'
+  let timedOut = false
+  const timeout = window.setTimeout(() => {
+    timedOut = true
+    loadErrorMsg.value = 'This is taking too long. Check your connection and try again.'
+    loadError.value = true
+    loading.value = false
+  }, 10000)
   try {
-    const { createGame } = await import('./createGame.js')
+    const mod = await import('./createGame.js')
+    if (timedOut) return
     destroyGame()
     progress.value = 0
     progress.mode = level.value.sceneKey === 'PaperPlane' ? 'distance' : 'count'
     progress.max = progress.mode === 'distance' ? 100 : level.value.config.target || 8
     sceneKey = level.value.sceneKey
     arrival.value = null
-    game = createGame(parentEl.value, {
+    game = mod.createGame(parentEl.value, {
       levelId: level.value.id,
       config: level.value.config,
       sceneKey,
@@ -180,8 +190,12 @@ async function startLevel() {
   } catch (err) {
     console.error(err)
     loadError.value = true
+    if (timedOut) {
+      loadErrorMsg.value = 'This is taking too long. Check your connection and try again.'
+    }
     playing.value = false
   } finally {
+    clearTimeout(timeout)
     loading.value = false
   }
 }

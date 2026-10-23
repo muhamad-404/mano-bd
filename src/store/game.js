@@ -25,6 +25,7 @@ function defaultState() {
     scene: 'gate',
     soundOn: true,
     previewMode: false,
+    calmMode: false,
     levelsCompleted: [],
     earnedNoteIds: [],
     revealedNoteIds: [],
@@ -102,6 +103,7 @@ function persistable(state) {
     scene: state.scene,
     soundOn: state.soundOn,
     previewMode: state.previewMode,
+    calmMode: Boolean(state.calmMode),
     levelsCompleted: [...state.levelsCompleted],
     earnedNoteIds: [...state.earnedNoteIds],
     revealedNoteIds: [...state.revealedNoteIds],
@@ -117,6 +119,8 @@ const store = reactive({
   ...mergeSaved(loadState()),
   reducedMotion: prefersReducedMotion(),
 })
+
+if (typeof store.calmMode !== 'boolean') store.calmMode = false
 
 applyUrlFlags(store)
 
@@ -161,6 +165,14 @@ export function setSoundOn(value) {
 
 export function setPreviewMode(value) {
   store.previewMode = Boolean(value)
+}
+
+export function setCalmMode(value) {
+  store.calmMode = Boolean(value)
+}
+
+export function toggleCalmMode() {
+  store.calmMode = !store.calmMode
 }
 
 export function resetAll() {

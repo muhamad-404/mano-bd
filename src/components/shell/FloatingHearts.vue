@@ -18,6 +18,7 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import gsap from 'gsap'
 import { useGameStore } from '../../store/game.js'
 import { isLowEnd } from '../../utils/device.js'
+import { shouldReduceMotion } from '../../utils/motion.js'
 import { heartBurstTick } from '../../utils/heartBurst.js'
 
 const store = useGameStore()
@@ -25,7 +26,7 @@ const hearts = ref([])
 let idSeq = 0
 
 function ambientCount() {
-  if (store.reducedMotion) return 0
+  if (shouldReduceMotion()) return 0
   return isLowEnd() ? 6 : 10
 }
 
@@ -112,7 +113,7 @@ function runBurst() {
 onMounted(() => makeAmbient())
 
 watch(
-  () => store.reducedMotion,
+  () => [store.reducedMotion, store.calmMode],
   () => makeAmbient(),
 )
 

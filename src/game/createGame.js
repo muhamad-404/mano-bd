@@ -15,6 +15,7 @@ const SCENE_BY_KEY = {
 /**
  * Create a Phaser game for one level. Imported dynamically from GameHost so
  * Phaser stays out of the initial Vue bundle until Start is tapped.
+ * Logical size 390x720 with FIT; textures at 2x; keep canvas sides well under 4096.
  *
  * @param {HTMLElement} parent
  * @param {{ levelId: number, config: object, sceneKey: string }} options

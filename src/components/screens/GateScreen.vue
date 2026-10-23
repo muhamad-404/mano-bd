@@ -7,7 +7,7 @@
       <h1 class="gate__title">{{ gate.title }}</h1>
       <p class="gate__subtitle">{{ gate.subtitle }}</p>
 
-      <div class="gate__countdown" role="timer" aria-live="polite">
+      <div class="gate__countdown" role="timer">
         <GlassCard
           v-for="unit in units"
           :key="unit.label"
@@ -18,6 +18,7 @@
           <p class="gate__label">{{ unit.label }}</p>
         </GlassCard>
       </div>
+      <p class="visually-hidden" aria-live="polite">{{ minuteAnnounce }}</p>
 
       <p class="gate__unlock">Unlocks {{ unlockLabel }}</p>
     </div>
@@ -49,6 +50,12 @@ const units = computed(() => {
     { label: 'Minutes', value: pad2(parts.minutes) },
     { label: 'Seconds', value: pad2(parts.seconds) },
   ]
+})
+
+/** Announce only when the minute bucket changes (avoid second noise). */
+const minuteAnnounce = computed(() => {
+  const parts = splitDuration(remaining.value)
+  return `${parts.days} days, ${parts.hours} hours, ${parts.minutes} minutes remaining`
 })
 
 function maybeSkip() {

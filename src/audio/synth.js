@@ -8,6 +8,11 @@ function getCtx() {
     const AC = window.AudioContext || window.webkitAudioContext
     if (!AC) return null
     ctx = new AC()
+    ctx.addEventListener?.('statechange', () => {
+      if (ctx?.state === 'suspended') {
+        /* resumed on next unlock / visibility */
+      }
+    })
   }
   return ctx
 }
@@ -18,6 +23,12 @@ export function unlock() {
   if (audio.state === 'suspended') {
     audio.resume().catch(() => {})
   }
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) unlock()
+  })
 }
 
 function tone({ freq = 440, type = 'sine', duration = 0.12, gain = 0.08, slideTo }) {

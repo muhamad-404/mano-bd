@@ -4,6 +4,7 @@ import { useGameStore } from '../store/game.js'
 let bgm = null
 let started = false
 let warnedMissing = false
+let settlePromise = null
 const BASE_VOLUME = 0.35
 
 function store() {
@@ -14,18 +15,24 @@ export function init() {
   if (bgm) return bgm
 
   const src = `${import.meta.env.BASE_URL}audio/bgm.mp3`
-  bgm = new Howl({
-    src: [src],
-    loop: true,
-    volume: 0,
-    html5: true,
-    preload: true,
-    onloaderror() {
-      if (!warnedMissing) {
-        warnedMissing = true
-        console.warn('[audio] bgm.mp3 missing or failed to load; UI will continue without music.')
-      }
-    },
+  settlePromise = new Promise((resolve) => {
+    bgm = new Howl({
+      src: [src],
+      loop: true,
+      volume: 0,
+      html5: true,
+      preload: true,
+      onload() {
+        resolve('loaded')
+      },
+      onloaderror() {
+        if (!warnedMissing) {
+          warnedMissing = true
+          console.warn('[audio] bgm.mp3 missing or failed to load; UI will continue without music.')
+        }
+        resolve('error')
+      },
+    })
   })
 
   if (typeof document !== 'undefined') {
@@ -35,12 +42,34 @@ export function init() {
   return bgm
 }
 
+/** Resolves when BGM loads, errors, or after maxMs. */
+export function whenBgmSettled(maxMs = 4000) {
+  init()
+  return Promise.race([
+    settlePromise || Promise.resolve('idle'),
+    new Promise((resolve) => setTimeout(() => resolve('timeout'), maxMs)),
+  ])
+}
+
+function resumeAudioContexts() {
+  try {
+    if (Howler.ctx && Howler.ctx.state === 'suspended') {
+      Howler.ctx.resume().catch(() => {})
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 function onVisibility() {
-  if (!started || !bgm) return
   if (document.hidden) {
-    bgm.pause()
-  } else if (store().soundOn) {
-    bgm.play()
+    if (started && bgm) bgm.pause()
+    return
+  }
+  resumeAudioContexts()
+  if (!started || !bgm) return
+  if (store().soundOn) {
+    if (!bgm.playing()) bgm.play()
   }
 }
 
@@ -78,6 +107,7 @@ export function pause() {
 }
 
 export function resume() {
+  resumeAudioContexts()
   if (!bgm || !started || !store().soundOn) return
   if (!bgm.playing()) bgm.play()
 }
@@ -96,6 +126,7 @@ export function unduck(ms = 500) {
 
 export default {
   init,
+  whenBgmSettled,
   start,
   setMuted,
   toggle,

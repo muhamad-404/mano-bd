@@ -11,6 +11,13 @@ const app = createApp(App)
 
 installIcons(app)
 
+app.config.errorHandler = (err, _instance, info) => {
+  console.error('[vue]', info, err)
+  if (typeof window !== 'undefined' && window.__manoShowError) {
+    window.__manoShowError(err)
+  }
+}
+
 app.use(Particles, {
   init: async (engine) => {
     await loadSlim(engine)

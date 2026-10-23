@@ -10,13 +10,11 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useGameStore } from '../../store/game.js'
 import { isLowEnd } from '../../utils/device.js'
-
-const store = useGameStore()
+import { shouldReduceMotion } from '../../utils/motion.js'
 
 const particleCount = computed(() => {
-  if (store.reducedMotion) return 0
+  if (shouldReduceMotion()) return 0
   return isLowEnd() ? 8 : 18
 })
 
