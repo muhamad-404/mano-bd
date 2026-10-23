@@ -27,6 +27,7 @@ function defaultState() {
     levelsCompleted: [],
     notesUnlocked: [],
     envelopesOpened: [],
+    introSeen: false,
     finaleSeen: false,
     currentLevel: null,
   }
@@ -90,6 +91,7 @@ function persistable(state) {
     levelsCompleted: [...state.levelsCompleted],
     notesUnlocked: [...state.notesUnlocked],
     envelopesOpened: [...state.envelopesOpened],
+    introSeen: state.introSeen,
     finaleSeen: state.finaleSeen,
     currentLevel: state.currentLevel,
   }
@@ -164,6 +166,10 @@ export function openEnvelope(id) {
   if (!store.envelopesOpened.includes(id)) {
     store.envelopesOpened.push(id)
   }
+}
+
+export function setIntroSeen() {
+  store.introSeen = true
 }
 
 export function setFinaleSeen() {

@@ -54,6 +54,12 @@ body {
   overflow-x: hidden;
 }
 
+/* Clear fixed TopBar (44px control + bar padding) */
+.screen.has-topbar {
+  padding-top: calc(var(--space-7) + var(--safe-top) + 44px);
+  justify-content: flex-start;
+}
+
 .glass {
   background: rgba(255, 255, 255, 0.42);
   border: 1px solid rgba(255, 255, 255, 0.55);

@@ -13,6 +13,7 @@ import { useGameStore } from '../../store/game.js'
 import GateScreen from '../screens/GateScreen.vue'
 import StartScreen from '../screens/StartScreen.vue'
 import IntroScreen from '../screens/IntroScreen.vue'
+import StoryTimeline from '../screens/StoryTimeline.vue'
 import FinaleScreen from '../screens/FinaleScreen.vue'
 import PlaceholderScreen from '../screens/PlaceholderScreen.vue'
 
@@ -34,7 +35,7 @@ const map = {
   gate: GateScreen,
   start: StartScreen,
   intro: IntroScreen,
-  timeline: asyncPlaceholder('Timeline'),
+  timeline: StoryTimeline,
   quest: asyncPlaceholder('Quest'),
   level: asyncPlaceholder('Level'),
   reward: asyncPlaceholder('Reward'),
