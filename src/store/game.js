@@ -3,6 +3,7 @@ import { loadState, saveState } from '../utils/storage.js'
 import { prefersReducedMotion } from '../utils/device.js'
 import { nowKarachi } from '../utils/dates.js'
 import { notes, NOTE_REWARD_COUNTS } from '../content/notes.js'
+import { PREVIEW_KEY } from '../config.js'
 
 const STORAGE_VERSION = 1
 
@@ -86,7 +87,8 @@ function applyUrlFlags(state) {
     saveState(persistable(state))
   }
 
-  if (params.get('preview') === '1') {
+  const preview = params.get('preview')
+  if (preview && preview === PREVIEW_KEY) {
     state.previewMode = true
   }
 

@@ -9,6 +9,7 @@
     "dev:https": "node scripts/lan-url.mjs https && vite --host --mode https",
     "build": "vite build",
     "analyze": "vite build --mode analyze",
+    "check:unlock": "node scripts/check-unlock.mjs",
     "preview": "vite preview --host",
     "preview:mobile": "npm run build && node scripts/lan-url.mjs preview && vite preview --host",
     "deploy:manual": "gh-pages -d dist"

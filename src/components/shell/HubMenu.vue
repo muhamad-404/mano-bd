@@ -64,6 +64,7 @@ import gsap from 'gsap'
 import IconButton from '../ui/IconButton.vue'
 import { goTo, progressText, toggleCalmMode, useGameStore } from '../../store/game.js'
 import { shouldReduceMotion } from '../../utils/motion.js'
+import { FINALE_REQUIRES_QUEST } from '../../config.js'
 
 const store = useGameStore()
 const isOpen = ref(false)
@@ -114,11 +115,17 @@ const rows = computed(() => [
   {
     id: 'finale',
     title: 'Finale',
-    subtitle: store.introSeen ? 'Birthday wish' : 'Finish the intro first',
+    subtitle: !store.introSeen
+      ? 'Finish the intro first'
+      : FINALE_REQUIRES_QUEST && store.levelsCompleted.length < 4
+        ? 'Finish the quest first'
+        : 'Birthday wish',
     icon: 'cake-candles',
     grad: 'rose',
     scene: 'finale',
-    disabled: !store.introSeen,
+    disabled:
+      !store.introSeen ||
+      (FINALE_REQUIRES_QUEST && store.levelsCompleted.length < 4),
   },
 ])
 
