@@ -71,11 +71,11 @@ const rows = computed(() => [
   {
     id: 'quest',
     title: 'Quest',
-    subtitle: 'Coming soon',
+    subtitle: 'Four chapters',
     icon: 'star',
     grad: 'gold',
     scene: 'quest',
-    disabled: true,
+    disabled: false,
   },
   {
     id: 'keepsakes',

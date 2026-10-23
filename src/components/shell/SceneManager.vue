@@ -7,7 +7,7 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, h } from 'vue'
+import { computed } from 'vue'
 import gsap from 'gsap'
 import { useGameStore } from '../../store/game.js'
 import GateScreen from '../screens/GateScreen.vue'
@@ -17,30 +17,20 @@ import StoryTimeline from '../screens/StoryTimeline.vue'
 import Keepsakes from '../screens/Keepsakes.vue'
 import Envelopes from '../screens/Envelopes.vue'
 import FinaleScreen from '../screens/FinaleScreen.vue'
-import PlaceholderScreen from '../screens/PlaceholderScreen.vue'
+import QuestMap from '../screens/QuestMap.vue'
+import RewardScreen from '../screens/RewardScreen.vue'
+import GameHost from '../../game/GameHost.vue'
 
 const store = useGameStore()
-
-function asyncPlaceholder(label) {
-  return defineAsyncComponent({
-    loader: () =>
-      Promise.resolve({
-        name: `Placeholder_${label}`,
-        setup() {
-          return () => h(PlaceholderScreen, { label })
-        },
-      }),
-  })
-}
 
 const map = {
   gate: GateScreen,
   start: StartScreen,
   intro: IntroScreen,
   timeline: StoryTimeline,
-  quest: asyncPlaceholder('Quest'),
-  level: asyncPlaceholder('Level'),
-  reward: asyncPlaceholder('Reward'),
+  quest: QuestMap,
+  level: GameHost,
+  reward: RewardScreen,
   keepsakes: Keepsakes,
   envelopes: Envelopes,
   finale: FinaleScreen,

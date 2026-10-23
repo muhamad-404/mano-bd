@@ -144,13 +144,15 @@ onUnmounted(() => {
 }
 
 .dev-menu__panel button {
-  border: 1px solid rgba(27, 21, 51, 0.15);
-  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(27, 21, 51, 0.2);
+  background: rgba(255, 255, 255, 0.92);
+  color: #1b1533;
   border-radius: 999px;
   padding: 6px 10px;
   min-height: 32px;
   cursor: pointer;
   font-size: 11px;
+  font-weight: 600;
 }
 
 .dev-menu__scenes button.active {

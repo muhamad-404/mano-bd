@@ -3,7 +3,7 @@
 ## Stack
 
 - Vue 3 (Composition API, plain JavaScript) + Vite
-- Phaser (lazy-loaded only when a level starts)
+- Phaser **4.2.1** (lazy-loaded only when a level starts). Kept after Phase 5 API probe (Graphics.generateTexture, Scale.FIT + CENTER_BOTH, pointer, tweens, particles). Game-level `resolution` was removed in v4 — crisp DPR: procedural textures drawn at 2x, Phaser Text `resolution` capped at 2, logical canvas 390x720 with FIT.
 - GSAP
 - Howler.js
 - Web Audio API (synth + mic)

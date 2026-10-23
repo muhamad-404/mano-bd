@@ -8,7 +8,7 @@ alwaysApply: true
 ## Stack
 
 - Vue 3 (Composition API, plain JavaScript) + Vite
-- Phaser (lazy-loaded only when a level starts)
+- Phaser **4.2.1** (lazy-loaded only when a level starts). DPR: 2x procedural textures + Text resolution capped at 2; logical 390x720 FIT (no game-level resolution in v4).
 - GSAP
 - Howler.js
 - Web Audio API (synth + mic)

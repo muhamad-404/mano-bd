@@ -170,6 +170,11 @@ export function resetAll() {
   saveState(persistable(store))
 }
 
+export function setCurrentLevel(level) {
+  const n = Number(level)
+  store.currentLevel = Number.isFinite(n) && n > 0 ? n : null
+}
+
 export function completeLevel(level) {
   const n = Number(level)
   if (!store.levelsCompleted.includes(n)) {

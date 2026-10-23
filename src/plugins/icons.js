@@ -28,6 +28,7 @@ import {
   faXmark,
   faBars,
   faHouse,
+  faPause,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faHeart as farHeart,
@@ -67,6 +68,7 @@ library.add(
   faXmark,
   faBars,
   faHouse,
+  faPause,
   farHeart,
   farStar,
   farEnvelope,

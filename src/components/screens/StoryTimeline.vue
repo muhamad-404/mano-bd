@@ -243,8 +243,7 @@ function setupObservers() {
 }
 
 function onContinue() {
-  // TODO Phase 5: goTo('quest')
-  goTo('finale')
+  goTo('quest')
 }
 
 onMounted(async () => {
