@@ -1,6 +1,8 @@
 <template>
   <header v-if="store.scene !== 'gate'" class="top-bar">
-    <div class="top-bar__left" aria-hidden="true"></div>
+    <div class="top-bar__left">
+      <HubMenu />
+    </div>
     <div class="top-bar__right">
       <MuteButton />
     </div>
@@ -9,6 +11,7 @@
 
 <script setup>
 import MuteButton from './MuteButton.vue'
+import HubMenu from './HubMenu.vue'
 import { useGameStore } from '../../store/game.js'
 
 const store = useGameStore()
@@ -36,9 +39,7 @@ const store = useGameStore()
   min-width: 44px;
   min-height: 44px;
   pointer-events: auto;
-}
-
-.top-bar__left {
-  /* Reserved for menu button (Phase 4). */
+  display: inline-flex;
+  align-items: center;
 }
 </style>

@@ -1,7 +1,8 @@
-import { reactive, watch } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import { loadState, saveState } from '../utils/storage.js'
 import { prefersReducedMotion } from '../utils/device.js'
 import { nowKarachi } from '../utils/dates.js'
+import { notes, NOTE_REWARD_COUNTS } from '../content/notes.js'
 
 const STORAGE_VERSION = 1
 
@@ -25,7 +26,9 @@ function defaultState() {
     soundOn: true,
     previewMode: false,
     levelsCompleted: [],
-    notesUnlocked: [],
+    earnedNoteIds: [],
+    revealedNoteIds: [],
+    notesGrantedLevels: [],
     envelopesOpened: [],
     introSeen: false,
     finaleSeen: false,
@@ -33,16 +36,28 @@ function defaultState() {
   }
 }
 
+function migrateNotes(saved) {
+  const earned = Array.isArray(saved.earnedNoteIds)
+    ? [...saved.earnedNoteIds]
+    : Array.isArray(saved.notesUnlocked)
+      ? [...saved.notesUnlocked]
+      : []
+  const revealed = Array.isArray(saved.revealedNoteIds) ? [...saved.revealedNoteIds] : []
+  const granted = Array.isArray(saved.notesGrantedLevels) ? [...saved.notesGrantedLevels] : []
+  return { earnedNoteIds: earned, revealedNoteIds: revealed, notesGrantedLevels: granted }
+}
+
 function mergeSaved(saved) {
   const base = defaultState()
   if (!saved || typeof saved !== 'object') return base
+  const noteFields = migrateNotes(saved)
   return {
     ...base,
     ...saved,
     version: STORAGE_VERSION,
     levelsCompleted: Array.isArray(saved.levelsCompleted) ? saved.levelsCompleted : [],
-    notesUnlocked: Array.isArray(saved.notesUnlocked) ? saved.notesUnlocked : [],
     envelopesOpened: Array.isArray(saved.envelopesOpened) ? saved.envelopesOpened : [],
+    ...noteFields,
   }
 }
 
@@ -74,7 +89,6 @@ function applyUrlFlags(state) {
     state.previewMode = true
   }
 
-  // Prime DEV now-override before stripping the query string.
   if (import.meta.env.DEV && params.has('now')) {
     nowKarachi()
   }
@@ -89,7 +103,9 @@ function persistable(state) {
     soundOn: state.soundOn,
     previewMode: state.previewMode,
     levelsCompleted: [...state.levelsCompleted],
-    notesUnlocked: [...state.notesUnlocked],
+    earnedNoteIds: [...state.earnedNoteIds],
+    revealedNoteIds: [...state.revealedNoteIds],
+    notesGrantedLevels: [...state.notesGrantedLevels],
     envelopesOpened: [...state.envelopesOpened],
     introSeen: state.introSeen,
     finaleSeen: state.finaleSeen,
@@ -121,6 +137,14 @@ watch(
 export function useGameStore() {
   return store
 }
+
+export const unrevealedEarned = computed(() =>
+  store.earnedNoteIds.filter((id) => !store.revealedNoteIds.includes(id)),
+)
+
+export const progressText = computed(
+  () => `${store.earnedNoteIds.length} of ${notes.length}`,
+)
 
 export function goTo(scene) {
   if (!SCENES.includes(scene)) return
@@ -154,11 +178,41 @@ export function completeLevel(level) {
   store.currentLevel = null
 }
 
+/** @deprecated prefer grantNotes */
 export function unlockNotes(ids) {
   for (const id of ids) {
-    if (!store.notesUnlocked.includes(id)) {
-      store.notesUnlocked.push(id)
+    if (!store.earnedNoteIds.includes(id)) {
+      store.earnedNoteIds.push(id)
     }
+  }
+}
+
+export function grantNotes(levelId) {
+  const level = Number(levelId)
+  if (!level || store.notesGrantedLevels.includes(level)) return []
+
+  const count = NOTE_REWARD_COUNTS[level - 1]
+  if (!count) return []
+
+  const already = new Set(store.earnedNoteIds)
+  const nextIds = []
+  for (const note of notes) {
+    if (already.has(note.id)) continue
+    nextIds.push(note.id)
+    if (nextIds.length >= count) break
+  }
+
+  for (const id of nextIds) {
+    store.earnedNoteIds.push(id)
+  }
+  store.notesGrantedLevels.push(level)
+  return nextIds
+}
+
+export function revealNote(id) {
+  if (!store.earnedNoteIds.includes(id)) return
+  if (!store.revealedNoteIds.includes(id)) {
+    store.revealedNoteIds.push(id)
   }
 }
 
@@ -174,6 +228,26 @@ export function setIntroSeen() {
 
 export function setFinaleSeen() {
   store.finaleSeen = true
+}
+
+export function resetNotes() {
+  store.earnedNoteIds = []
+  store.revealedNoteIds = []
+  store.notesGrantedLevels = []
+}
+
+export function revealAllNotes() {
+  for (const id of store.earnedNoteIds) {
+    if (!store.revealedNoteIds.includes(id)) {
+      store.revealedNoteIds.push(id)
+    }
+  }
+}
+
+export function grantAllNotes() {
+  for (let level = 1; level <= NOTE_REWARD_COUNTS.length; level += 1) {
+    grantNotes(level)
+  }
 }
 
 export default store

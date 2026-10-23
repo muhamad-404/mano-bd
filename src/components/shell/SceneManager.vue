@@ -14,6 +14,8 @@ import GateScreen from '../screens/GateScreen.vue'
 import StartScreen from '../screens/StartScreen.vue'
 import IntroScreen from '../screens/IntroScreen.vue'
 import StoryTimeline from '../screens/StoryTimeline.vue'
+import Keepsakes from '../screens/Keepsakes.vue'
+import Envelopes from '../screens/Envelopes.vue'
 import FinaleScreen from '../screens/FinaleScreen.vue'
 import PlaceholderScreen from '../screens/PlaceholderScreen.vue'
 
@@ -39,8 +41,8 @@ const map = {
   quest: asyncPlaceholder('Quest'),
   level: asyncPlaceholder('Level'),
   reward: asyncPlaceholder('Reward'),
-  keepsakes: asyncPlaceholder('Keepsakes'),
-  envelopes: asyncPlaceholder('Envelopes'),
+  keepsakes: Keepsakes,
+  envelopes: Envelopes,
   finale: FinaleScreen,
 }
 

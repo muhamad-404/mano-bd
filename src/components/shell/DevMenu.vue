@@ -16,6 +16,15 @@
         <button type="button" @click="onPreview">Preview {{ store.previewMode ? 'on' : 'off' }}</button>
         <button type="button" @click="onReset">Reset</button>
       </div>
+      <div class="dev-menu__row">
+        <button type="button" @click="grantAllNotes">Grant all notes</button>
+        <button type="button" @click="grantNotes(1)">Grant L1</button>
+        <button type="button" @click="grantNotes(2)">Grant L2</button>
+        <button type="button" @click="grantNotes(3)">Grant L3</button>
+        <button type="button" @click="grantNotes(4)">Grant L4</button>
+        <button type="button" @click="revealAllNotes">Reveal all</button>
+        <button type="button" @click="resetNotes">Reset notes</button>
+      </div>
       <div class="dev-menu__scenes">
         <button
           v-for="scene in SCENES"
@@ -36,7 +45,11 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import {
   SCENES,
   goTo,
+  grantAllNotes,
+  grantNotes,
   resetAll,
+  resetNotes,
+  revealAllNotes,
   setPreviewMode,
   useGameStore,
 } from '../../store/game.js'
