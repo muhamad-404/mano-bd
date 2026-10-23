@@ -11,3 +11,13 @@ export const start = {
   subtitle: 'A little world made just for you',
   cta: 'Tap to begin',
 }
+
+export const finale = {
+  wishPrompt: 'Make a wish, Mano',
+  blowButton: 'Blow the candle',
+  tapFallback: 'Tap to blow',
+  micDenied: 'No problem, just tap the candle.',
+  replay: 'Watch again',
+  voiceNoteButton: 'Play my voice note',
+  voiceNotePause: 'Pause voice note',
+}

@@ -13,6 +13,7 @@ import { useGameStore } from '../../store/game.js'
 import GateScreen from '../screens/GateScreen.vue'
 import StartScreen from '../screens/StartScreen.vue'
 import IntroScreen from '../screens/IntroScreen.vue'
+import FinaleScreen from '../screens/FinaleScreen.vue'
 import PlaceholderScreen from '../screens/PlaceholderScreen.vue'
 
 const store = useGameStore()
@@ -39,7 +40,7 @@ const map = {
   reward: asyncPlaceholder('Reward'),
   keepsakes: asyncPlaceholder('Keepsakes'),
   envelopes: asyncPlaceholder('Envelopes'),
-  finale: asyncPlaceholder('Finale'),
+  finale: FinaleScreen,
 }
 
 const current = computed(() => map[store.scene] || GateScreen)

@@ -1,8 +1,8 @@
 <template>
   <div class="app-root">
     <GradientDefs />
-    <ParticleBackdrop />
-    <FloatingHearts />
+    <ParticleBackdrop v-show="showAmbient" />
+    <FloatingHearts v-show="showAmbient" />
     <TopBar />
     <SceneManager />
     <component :is="DevMenu" v-if="isDev" />
@@ -10,7 +10,7 @@
 </template>
 
 <script setup>
-import { defineAsyncComponent, onMounted, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, watch } from 'vue'
 import GradientDefs from './components/ui/GradientDefs.vue'
 import ParticleBackdrop from './components/shell/ParticleBackdrop.vue'
 import FloatingHearts from './components/shell/FloatingHearts.vue'
@@ -26,6 +26,7 @@ const DevMenu = isDev
   : null
 
 const store = useGameStore()
+const showAmbient = computed(() => store.scene !== 'finale')
 
 onMounted(() => {
   if (isLowEnd()) {
