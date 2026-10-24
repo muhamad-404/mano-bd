@@ -56,11 +56,13 @@ const DEFS = [
     sceneKey: 'PaperPlane',
     ready: true,
     config: {
-      target: 7,
-      durationSec: 60,
-      starChance: 0.35,
+      target: 8,
+      durationSec: 72,
+      starChance: 0.42,
+      cloudChance: 0.48,
+      gustEverySec: 4.5,
       palette: 'night',
-      hint: 'Drag to steer the plane',
+      hint: 'Steer upward. Catch stars, dodge clouds.',
     },
   },
 ]

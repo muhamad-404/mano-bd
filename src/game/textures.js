@@ -6,6 +6,8 @@ export const TEX = {
   softCircle: 'mano-soft-circle',
   cloud: 'mano-cloud',
   plane: 'mano-plane',
+  planeUp: 'mano-plane-up',
+  house: 'mano-house',
   bgDawn: 'mano-bg-dawn',
   bgEvening: 'mano-bg-evening',
   bgStorm: 'mano-bg-storm',
@@ -95,6 +97,7 @@ function drawCloud(g, w, h) {
   g.fillRoundedRect(w * 0.22, h * 0.5, w * 0.56, h * 0.32, 12)
 }
 
+/** Classic paper plane pointing right (other uses). */
 function drawPlane(g, w, h) {
   g.fillStyle(0xbfe3ff, 1)
   g.beginPath()
@@ -106,6 +109,93 @@ function drawPlane(g, w, h) {
   g.fillPath()
   g.fillStyle(0xff7ea8, 1)
   g.fillTriangle(w * 0.78, h * 0.28, w * 0.92, h * 0.4, w * 0.72, h * 0.42)
+}
+
+/** Paper plane nose-up for the night flight level. */
+function drawPlaneUp(g, w, h) {
+  // Soft shadow
+  g.fillStyle(0x1b1533, 0.2)
+  g.beginPath()
+  g.moveTo(w * 0.52, h * 0.12)
+  g.lineTo(w * 0.82, h * 0.74)
+  g.lineTo(w * 0.52, h * 0.62)
+  g.lineTo(w * 0.22, h * 0.74)
+  g.closePath()
+  g.fillPath()
+
+  // Wings / body (nose at top)
+  g.fillStyle(0xd6efff, 1)
+  g.beginPath()
+  g.moveTo(w * 0.5, h * 0.06)
+  g.lineTo(w * 0.86, h * 0.7)
+  g.lineTo(w * 0.5, h * 0.56)
+  g.lineTo(w * 0.14, h * 0.7)
+  g.closePath()
+  g.fillPath()
+
+  // Fold crease
+  g.fillStyle(0x9ec9ef, 0.9)
+  g.beginPath()
+  g.moveTo(w * 0.5, h * 0.1)
+  g.lineTo(w * 0.5, h * 0.56)
+  g.lineTo(w * 0.62, h * 0.66)
+  g.closePath()
+  g.fillPath()
+
+  // Rose tail ribbon
+  g.fillStyle(0xff7ea8, 1)
+  g.fillTriangle(w * 0.5, h * 0.52, w * 0.38, h * 0.92, w * 0.5, h * 0.78)
+  g.fillStyle(0xe0457b, 1)
+  g.fillTriangle(w * 0.5, h * 0.52, w * 0.62, h * 0.92, w * 0.5, h * 0.78)
+
+  // Nose highlight
+  g.fillStyle(0xfff6ee, 0.75)
+  g.fillCircle(w * 0.5, h * 0.16, w * 0.045)
+}
+
+function drawHouse(g, w, h) {
+  const cx = w / 2
+  // Ground glow
+  g.fillStyle(0xffd98a, 0.22)
+  g.fillEllipse(cx, h * 0.9, w * 0.42, h * 0.08)
+
+  // Walls
+  g.fillStyle(0xffe0b8, 1)
+  g.fillRoundedRect(w * 0.22, h * 0.42, w * 0.56, h * 0.4, 6)
+  // Wall shade
+  g.fillStyle(0xf0c898, 0.55)
+  g.fillRect(w * 0.5, h * 0.42, w * 0.28, h * 0.4)
+
+  // Chimney
+  g.fillStyle(0xe8a070, 1)
+  g.fillRoundedRect(w * 0.66, h * 0.22, w * 0.1, h * 0.22, 3)
+  g.fillStyle(0xffc9d9, 0.45)
+  g.fillCircle(w * 0.71, h * 0.18, 5)
+  g.fillCircle(w * 0.74, h * 0.12, 3.5)
+
+  // Roof
+  g.fillStyle(0xff7ea8, 1)
+  g.fillTriangle(w * 0.12, h * 0.46, w * 0.88, h * 0.46, cx, h * 0.14)
+  g.fillStyle(0xe0457b, 0.55)
+  g.fillTriangle(cx, h * 0.14, w * 0.88, h * 0.46, w * 0.62, h * 0.46)
+
+  // Door
+  g.fillStyle(0xc07050, 1)
+  g.fillRoundedRect(cx - w * 0.08, h * 0.58, w * 0.16, h * 0.24, 4)
+  g.fillStyle(0xffd98a, 0.9)
+  g.fillCircle(cx + w * 0.04, h * 0.7, 2)
+
+  // Windows (warm light)
+  g.fillStyle(0xfff0c8, 1)
+  g.fillRoundedRect(w * 0.28, h * 0.52, w * 0.12, h * 0.12, 3)
+  g.fillRoundedRect(w * 0.6, h * 0.52, w * 0.12, h * 0.12, 3)
+  g.lineStyle(1.5, 0xe0457b, 0.35)
+  g.strokeRoundedRect(w * 0.28, h * 0.52, w * 0.12, h * 0.12, 3)
+  g.strokeRoundedRect(w * 0.6, h * 0.52, w * 0.12, h * 0.12, 3)
+  g.lineBetween(w * 0.34, h * 0.52, w * 0.34, h * 0.64)
+  g.lineBetween(w * 0.28, h * 0.58, w * 0.4, h * 0.58)
+  g.lineBetween(w * 0.66, h * 0.52, w * 0.66, h * 0.64)
+  g.lineBetween(w * 0.6, h * 0.58, w * 0.72, h * 0.58)
 }
 
 function bake(scene, key, width, height, draw) {
@@ -144,6 +234,8 @@ export function generateTextures(scene) {
   bake(scene, TEX.softCircle, 96, 96, (g) => drawSoftCircle(g, 96))
   bake(scene, TEX.cloud, 160, 90, (g) => drawCloud(g, 160, 90))
   bake(scene, TEX.plane, 120, 70, (g) => drawPlane(g, 120, 70))
+  bake(scene, TEX.planeUp, 96, 128, (g) => drawPlaneUp(g, 96, 128))
+  bake(scene, TEX.house, 128, 128, (g) => drawHouse(g, 128, 128))
 
   bakeGradient(scene, TEX.bgDawn, [
     [0, '#ffc9d9'],
