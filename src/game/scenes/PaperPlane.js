@@ -3,7 +3,6 @@ import { chime, pop } from '../../audio/synth.js'
 import { emit } from '../bridge.js'
 import { LAST_MET } from '../../config.js'
 import { daysBetween, nowKarachi } from '../../utils/dates.js'
-import { prefersReducedMotion } from '../../utils/device.js'
 import { generateTextures, TEX } from '../textures.js'
 import BaseLevelScene from './BaseLevelScene.js'
 
@@ -13,7 +12,6 @@ export default class PaperPlane extends BaseLevelScene {
     this.plane = null
     this.starsFar = null
     this.starsNear = null
-    this.wind = []
     this.nudgeX = 0
     this.distance = 0
     this.starScore = 0
@@ -22,6 +20,7 @@ export default class PaperPlane extends BaseLevelScene {
     this.endY = 0
     this.flightSec = 60
     this.spawnAcc = 0
+    this.lastEmittedPct = -1
   }
 
   create() {
@@ -36,6 +35,7 @@ export default class PaperPlane extends BaseLevelScene {
       this.arrived = false
       this.nudgeX = 0
       this.spawnAcc = 0
+      this.lastEmittedPct = -1
       this.pointerX = this.scale.width / 2
       this.target = this.levelConfig.target || 7
       this.progress = 0
@@ -44,7 +44,7 @@ export default class PaperPlane extends BaseLevelScene {
       this.createMarkers()
       this.createBasket()
       this.bindInput()
-      this.emitDistance()
+      this.emitDistance(true)
       this.showHint()
     } catch (err) {
       console.error('[PaperPlane] create failed', err)
@@ -82,22 +82,7 @@ export default class PaperPlane extends BaseLevelScene {
       .setDepth(-17)
       .setAlpha(0.85)
 
-    if (!prefersReducedMotion()) {
-      for (let i = 0; i < 6; i += 1) {
-        const streak = this.add
-          .rectangle(
-            Phaser.Math.Between(20, this.scale.width - 20),
-            Phaser.Math.Between(0, this.scale.height),
-            2,
-            18 + Math.random() * 24,
-            0xffffff,
-            0.25,
-          )
-          .setDepth(-10)
-        streak.setData('vy', 80 + Math.random() * 60)
-        this.wind.push(streak)
-      }
-    }
+    // Soft static night only — no streak animation (calmer, more modern)
   }
 
   createMarkers() {
@@ -105,11 +90,11 @@ export default class PaperPlane extends BaseLevelScene {
     const hx = this.scale.width / 2
     const hy = this.scale.height - 40
     const house = this.add.graphics().setDepth(2)
-    house.fillStyle(0xffd98a, 0.9)
+    house.fillStyle(0xffd98a, 0.95)
     house.fillRoundedRect(hx - 22, hy - 18, 44, 28, 4)
-    house.fillStyle(0xff7ea8, 0.95)
+    house.fillStyle(0xff7ea8, 1)
     house.fillTriangle(hx - 28, hy - 18, hx + 28, hy - 18, hx, hy - 42)
-    house.fillStyle(0xfff6ee, 0.85)
+    house.fillStyle(0xfff6ee, 0.9)
     house.fillCircle(hx, hy - 8, 5)
 
     this.add
@@ -122,20 +107,13 @@ export default class PaperPlane extends BaseLevelScene {
       .setOrigin(0.5)
       .setDepth(3)
 
-    const glow = this.add
+    // Destination marker — static glow (no pulse tween)
+    this.add
       .image(this.scale.width / 2, this.endY, TEX.softCircle)
       .setDepth(2)
       .setTint(0xffd98a)
-      .setAlpha(0.55)
-      .setScale(1.6)
-    this.tweens.add({
-      targets: glow,
-      alpha: 0.3,
-      scale: 1.9,
-      duration: 900,
-      yoyo: true,
-      repeat: -1,
-    })
+      .setAlpha(0.4)
+      .setScale(1.5)
     this.add
       .text(this.scale.width / 2, this.endY - 36, 'To Mano', {
         fontFamily: 'Dancing Script, Quicksand, cursive',
@@ -171,7 +149,6 @@ export default class PaperPlane extends BaseLevelScene {
     if (this.pausedLogic || this.completing || this.arrived) return
     const dt = Math.min(delta, 40) / 1000
     this.updateFlight(dt)
-    this.updateWind(dt)
     this.updateFloaters(dt)
     this.maybeSpawn(dt)
   }
@@ -189,20 +166,11 @@ export default class PaperPlane extends BaseLevelScene {
     this.distance = Phaser.Math.Clamp((this.startY - this.plane.y) / span, 0, 1)
     this.emitDistance()
 
-    if (this.starsFar) this.starsFar.tilePositionY -= 18 * dt
-    if (this.starsNear) this.starsNear.tilePositionY -= 42 * dt
+    // Slow parallax only (no flashy streaks)
+    if (this.starsFar) this.starsFar.tilePositionY -= 10 * dt
+    if (this.starsNear) this.starsNear.tilePositionY -= 22 * dt
 
     if (this.distance >= 0.995) this.onArrive()
-  }
-
-  updateWind(dt) {
-    for (const streak of this.wind) {
-      streak.y += streak.getData('vy') * dt
-      if (streak.y > this.scale.height + 20) {
-        streak.y = -20
-        streak.x = Phaser.Math.Between(20, this.scale.width - 20)
-      }
-    }
   }
 
   maybeSpawn(dt) {
@@ -244,7 +212,9 @@ export default class PaperPlane extends BaseLevelScene {
           this.starScore += 1
           this.sparkleAt(item.x, item.y)
           this.progress = Math.min(this.target, this.starScore)
-          this.emitProgress()
+          // Small boost toward Mano — never emit count-mode progress (that hid the rail)
+          this.plane.y = Math.max(this.endY, this.plane.y - 10)
+          this.emitDistance(true)
           this.release(item)
         } else {
           this.nudgeX += dx > 0 ? 50 : -50
@@ -256,10 +226,13 @@ export default class PaperPlane extends BaseLevelScene {
     }
   }
 
-  emitDistance() {
+  emitDistance(force = false) {
+    const pct = Math.round(this.distance * 100)
+    if (!force && pct === this.lastEmittedPct) return
+    this.lastEmittedPct = pct
     emit('level:progress', {
       levelId: this.levelId,
-      value: Math.round(this.distance * 100),
+      value: pct,
       max: 100,
       mode: 'distance',
       stars: this.starScore,

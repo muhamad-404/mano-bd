@@ -26,21 +26,29 @@
       </GlassCard>
     </div>
 
-    <div v-if="playing && !arrival" class="host__hud">
-      <div v-if="progress.mode === 'distance'" class="host__distance" aria-label="Distance">
-        <div class="host__distance-track">
-          <div class="host__distance-fill" :style="{ transform: `scaleY(${progressRatio})` }" />
-          <span
-            class="host__distance-plane fa-grad-sky"
-            :style="{ bottom: `${progressRatio * 100}%` }"
-            aria-hidden="true"
-          >
-            <FaIcon :icon="['fas', 'paper-plane']" />
-          </span>
-        </div>
-        <span class="host__distance-label">{{ progress.value }}%</span>
+    <!-- Vertical journey rail over the night sky (house bottom → Mano top) -->
+    <div
+      v-if="playing && !arrival && progress.mode === 'distance'"
+      class="host__rail"
+      aria-label="Flight progress"
+    >
+      <span class="host__rail-cap" aria-hidden="true">Mano</span>
+      <div class="host__rail-track">
+        <div class="host__rail-fill" :style="{ transform: `scaleY(${progressRatio})` }" />
+        <span
+          class="host__rail-plane fa-grad-sky"
+          :style="{ bottom: `${progressRatio * 100}%` }"
+          aria-hidden="true"
+        >
+          <FaIcon :icon="['fas', 'paper-plane']" />
+        </span>
       </div>
-      <div v-else class="host__progress" aria-label="Level progress">
+      <span class="host__rail-pct">{{ progress.value }}%</span>
+      <span class="host__rail-cap host__rail-cap--home" aria-hidden="true">Home</span>
+    </div>
+
+    <div v-if="playing && !arrival" class="host__hud" :class="{ 'is-distance': progress.mode === 'distance' }">
+      <div v-if="progress.mode !== 'distance'" class="host__progress" aria-label="Level progress">
         <span class="fa-grad-rose" aria-hidden="true">
           <FaIcon :icon="['fas', progressIcon]" />
         </span>
@@ -110,9 +118,11 @@ const progressIcon = computed(() => {
 
 function onProgress(payload) {
   if (!payload) return
+  // Ignore count-mode blips during the paper-plane flight (they made the rail vanish)
+  if (progress.mode === 'distance' && payload.mode !== 'distance') return
   progress.value = payload.value
-  progress.max = payload.max
-  progress.mode = payload.mode || 'count'
+  progress.max = payload.max || (payload.mode === 'distance' ? 100 : progress.max)
+  if (payload.mode) progress.mode = payload.mode
 }
 
 function onComplete() {
@@ -402,8 +412,79 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
+.host__hud.is-distance {
+  justify-content: flex-end;
+}
+
 .host__hud > * {
   pointer-events: auto;
+}
+
+.host__rail {
+  position: absolute;
+  left: calc(6px + var(--safe-left));
+  top: calc(var(--space-3) + var(--safe-top) + 56px);
+  bottom: calc(var(--space-5) + var(--safe-bottom) + 36px);
+  z-index: 4;
+  width: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.host__rail-track {
+  position: relative;
+  flex: 1 1 auto;
+  width: 6px;
+  min-height: 80px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+  overflow: visible;
+}
+
+.host__rail-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  transform-origin: bottom center;
+  background: linear-gradient(180deg, #ff7ea8 0%, #cdb8ff 100%);
+  border-radius: inherit;
+  transition: transform 0.12s linear;
+}
+
+.host__rail-plane {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  font-size: 0.7rem;
+  filter: drop-shadow(0 1px 2px rgba(27, 21, 51, 0.45));
+}
+
+.host__rail-pct {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: rgba(255, 246, 238, 0.95);
+  text-shadow: 0 1px 3px rgba(27, 21, 51, 0.55);
+  min-width: 2.2rem;
+  text-align: center;
+}
+
+.host__rail-cap {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: rgba(255, 246, 238, 0.7);
+  text-shadow: 0 1px 2px rgba(27, 21, 51, 0.5);
+}
+
+.host__rail-cap--home {
+  color: rgba(255, 217, 138, 0.9);
 }
 
 .host__progress {
@@ -456,49 +537,6 @@ onUnmounted(() => {
 .host__pause-card h2 {
   margin: 0;
   font-family: var(--font-letter);
-}
-
-.host__distance {
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.78);
-  font-weight: 700;
-  font-size: 0.8rem;
-}
-
-.host__distance-track {
-  position: relative;
-  width: 10px;
-  height: 88px;
-  border-radius: 999px;
-  background: rgba(27, 21, 51, 0.12);
-  overflow: visible;
-}
-
-.host__distance-fill {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 100%;
-  transform-origin: bottom center;
-  background: linear-gradient(180deg, #ff7ea8, #cdb8ff);
-  border-radius: inherit;
-}
-
-.host__distance-plane {
-  position: absolute;
-  left: 50%;
-  transform: translate(-50%, 50%);
-  font-size: 0.75rem;
-}
-
-.host__distance-label {
-  min-width: 2.5rem;
 }
 
 .host__arrival {
