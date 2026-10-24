@@ -390,7 +390,8 @@ onUnmounted(() => {
 
 .host__hud {
   position: absolute;
-  top: calc(var(--space-3) + var(--safe-top));
+  /* Sit under fixed TopBar (hub + mute) so pause no longer overlaps mute */
+  top: calc(var(--space-3) + var(--safe-top) + 52px);
   left: calc(var(--space-3) + var(--safe-left));
   right: calc(var(--space-3) + var(--safe-right));
   z-index: 4;
@@ -458,6 +459,7 @@ onUnmounted(() => {
 }
 
 .host__distance {
+  flex: 1;
   display: flex;
   align-items: flex-end;
   gap: 8px;

@@ -14,15 +14,17 @@
         </PrimaryButton>
       </GlassCard>
 
-      <GlassCard v-else-if="phase === 'scratch' && activeNote" class="reward__card">
+      <GlassCard v-else-if="phase === 'scratch' && activeNote" class="reward__card reward__card--scratch">
         <h2 class="reward__note-title">New note</h2>
-        <ScratchCard
-          :key="activeNote.id"
-          :note="activeNote"
-          :width="scratchW"
-          :height="180"
-          @reveal="onRevealed"
-        />
+        <div class="reward__scratch">
+          <ScratchCard
+            :key="activeNote.id"
+            :note="activeNote"
+            :width="scratchW"
+            :height="180"
+            @reveal="onRevealed"
+          />
+        </div>
         <p v-if="revealedHere" class="reward__body">{{ activeNote.text }}</p>
         <PrimaryButton v-if="revealedHere" @click="nextCard">
           {{ hasMore ? 'Next card' : 'Back to the map' }}
@@ -92,7 +94,8 @@ function toMap() {
 }
 
 onMounted(() => {
-  scratchW.value = Math.min(300, Math.max(240, window.innerWidth - 64))
+  // Fit inside glass padding + screen gutters so the coat stays centered
+  scratchW.value = Math.min(280, Math.max(200, window.innerWidth - 96))
   const id = store.currentLevel
   levelId.value = id
   if (id) {
@@ -125,6 +128,17 @@ onMounted(() => {
   align-items: center;
   gap: var(--space-3);
   text-align: center;
+}
+
+.reward__card--scratch {
+  align-items: stretch;
+}
+
+.reward__scratch {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .reward__icon {

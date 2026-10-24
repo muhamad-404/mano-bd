@@ -51,20 +51,24 @@
           </span>
         </button>
 
-        <div
+        <button
           v-for="node in nodes"
           :key="`card-${node.id}`"
+          type="button"
           class="quest__card-wrap"
-          :class="node.side"
+          :class="[node.side, `is-${node.state}`]"
           :style="cardStyle(node)"
+          :aria-label="node.aria"
+          @click="onNode(node)"
         >
           <GlassCard class="quest__card" padding="12px">
             <span class="quest__chip">{{ node.dateLabel }}</span>
             <h2 class="quest__card-title">{{ node.title }}</h2>
             <p class="quest__card-sub">{{ node.subtitle }}</p>
+            <p v-if="node.state === 'available'" class="quest__play-hint">Tap to play</p>
             <p v-if="node.toast" class="quest__toast">{{ node.toast }}</p>
           </GlassCard>
-        </div>
+        </button>
 
         <button
           v-if="allDone"
@@ -309,10 +313,15 @@ onUnmounted(() => {
   height: 100dvh;
   max-height: 100dvh;
   min-height: 100dvh;
-  padding: calc(var(--space-7) + var(--safe-top) + 44px) var(--space-4) calc(var(--space-4) + var(--safe-bottom));
+  /* Tighter under TopBar — was space-7 + 44 and felt empty */
+  padding: calc(var(--space-3) + var(--safe-top) + 52px) var(--space-4) calc(var(--space-4) + var(--safe-bottom));
   box-sizing: border-box;
   color: var(--color-night);
   overflow: hidden;
+}
+
+.quest.has-topbar {
+  padding-top: calc(var(--space-3) + var(--safe-top) + 52px);
 }
 
 .quest__header {
@@ -320,8 +329,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
+  gap: 4px;
+  margin-bottom: var(--space-2);
 }
 
 .quest__title {
@@ -367,13 +376,15 @@ onUnmounted(() => {
 
 .quest__node {
   position: absolute;
-  width: 56px;
-  height: 56px;
-  margin: -28px 0 0 -28px;
-  border: none;
+  width: 60px;
+  height: 60px;
+  margin: -30px 0 0 -30px;
+  border: 3px solid rgba(255, 255, 255, 0.95);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 8px 24px rgba(27, 21, 51, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 10px 28px rgba(27, 21, 51, 0.18),
+    0 0 0 2px rgba(255, 126, 168, 0.25);
   cursor: pointer;
   z-index: 2;
   display: grid;
@@ -385,33 +396,71 @@ onUnmounted(() => {
 .quest__node.is-locked,
 .quest__node.is-soon {
   opacity: 0.55;
+  box-shadow: 0 6px 16px rgba(27, 21, 51, 0.1);
+  border-color: rgba(255, 255, 255, 0.7);
 }
 
 .quest__node.is-done {
   background: linear-gradient(135deg, #ff7ea8, #e0457b);
   color: #fff;
+  border-color: #fff;
+  box-shadow: 0 10px 28px rgba(224, 69, 123, 0.35);
+}
+
+.quest__node.is-available {
+  transform: scale(1.06);
+  border-color: #ff7ea8;
+  box-shadow:
+    0 12px 32px rgba(224, 69, 123, 0.35),
+    0 0 0 4px rgba(255, 126, 168, 0.35);
 }
 
 .quest__node.is-available .quest__node-glow {
   position: absolute;
-  inset: -6px;
+  inset: -10px;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(255, 126, 168, 0.45), transparent 70%);
+  background: radial-gradient(circle, rgba(255, 126, 168, 0.55), transparent 70%);
   z-index: -1;
 }
 
 .quest__node-icon {
-  font-size: 1.25rem;
+  font-size: 1.35rem;
 }
 
 .quest__card-wrap {
   position: absolute;
   z-index: 1;
   box-sizing: border-box;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.quest__card-wrap.is-available .quest__card {
+  box-shadow: 0 12px 28px rgba(224, 69, 123, 0.22);
+  border: 1px solid rgba(255, 126, 168, 0.55);
+}
+
+.quest__card-wrap.is-locked,
+.quest__card-wrap.is-soon {
+  cursor: default;
 }
 
 .quest__card {
   text-align: left;
+  pointer-events: none;
+}
+
+.quest__play-hint {
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-deep-rose);
 }
 
 .quest__chip {

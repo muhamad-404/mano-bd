@@ -1,6 +1,9 @@
 <template>
   <div class="scratch-wrap">
-    <div class="scratch" :style="{ width: `${width}px`, height: `${height}px` }">
+    <div
+      class="scratch"
+      :style="{ width: '100%', maxWidth: `${width}px`, height: `${height}px` }"
+    >
       <div class="scratch__note no-select">
         <p class="scratch__text">{{ note.text }}</p>
       </div>
@@ -65,16 +68,21 @@ function armIdleReveal() {
   }, 10000)
 }
 
+/** Logical coat size (matches laid-out .scratch box). */
+let coatW = 0
+let coatH = 0
+
 function setupCanvas() {
   const canvas = canvasEl.value
   if (!canvas || cleared.value) return
+  const parent = canvas.parentElement
   const dpr = dprCap(2)
-  const w = props.width
-  const h = props.height
-  canvas.width = Math.round(w * dpr)
-  canvas.height = Math.round(h * dpr)
-  canvas.style.width = `${w}px`
-  canvas.style.height = `${h}px`
+  coatW = Math.max(1, Math.round(parent?.clientWidth || props.width))
+  coatH = Math.max(1, Math.round(props.height))
+  canvas.width = Math.round(coatW * dpr)
+  canvas.height = Math.round(coatH * dpr)
+  canvas.style.width = '100%'
+  canvas.style.height = '100%'
   ctx = canvas.getContext('2d', { willReadFrequently: true })
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   drawCoat()
@@ -82,8 +90,8 @@ function setupCanvas() {
 
 function drawCoat() {
   if (!ctx) return
-  const w = props.width
-  const h = props.height
+  const w = coatW || props.width
+  const h = coatH || props.height
   const grad = ctx.createLinearGradient(0, 0, w, h)
   grad.addColorStop(0, '#FF7EA8')
   grad.addColorStop(1, '#CDB8FF')
@@ -119,9 +127,11 @@ function drawStar(cx, cy, r) {
 
 function localPos(e) {
   const rect = canvasEl.value.getBoundingClientRect()
+  const w = coatW || props.width
+  const h = coatH || props.height
   return {
-    x: ((e.clientX - rect.left) / rect.width) * props.width,
-    y: ((e.clientY - rect.top) / rect.height) * props.height,
+    x: ((e.clientX - rect.left) / Math.max(1, rect.width)) * w,
+    y: ((e.clientY - rect.top) / Math.max(1, rect.height)) * h,
   }
 }
 
@@ -257,6 +267,9 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: var(--space-3);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .scratch__reveal {
@@ -274,6 +287,9 @@ onUnmounted(() => {
 .scratch {
   position: relative;
   margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   border-radius: var(--radius-md);
   overflow: hidden;
   touch-action: none;

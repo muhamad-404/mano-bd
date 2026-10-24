@@ -158,13 +158,17 @@ onUnmounted(() => {
 <style scoped>
 .envelopes {
   align-items: stretch;
-  overflow-y: auto;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
   overscroll-behavior: contain;
   background: linear-gradient(180deg, #fff6ee 0%, #bfe3ff 100%);
   color: var(--color-night);
 }
 
 .envelopes__header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -197,12 +201,18 @@ onUnmounted(() => {
 }
 
 .envelopes__list {
+  flex: 1 1 auto;
+  min-height: 0;
   width: min(100%, 420px);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding-bottom: var(--space-7);
+  padding-bottom: calc(var(--space-7) + var(--safe-bottom));
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .envelopes__modal {
