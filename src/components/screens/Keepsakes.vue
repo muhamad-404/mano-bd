@@ -222,7 +222,7 @@ function onKey(e) {
 }
 
 function measure() {
-  scratchW.value = Math.min(280, Math.max(200, window.innerWidth - 96))
+  scratchW.value = Math.min(280, Math.max(220, window.innerWidth - 72))
 }
 
 onMounted(() => {

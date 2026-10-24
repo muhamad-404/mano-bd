@@ -1,5 +1,5 @@
 <template>
-  <section class="reward screen has-topbar">
+  <section class="reward">
     <div class="reward__inner">
       <GlassCard v-if="phase === 'intro'" class="reward__card">
         <span class="fa-grad-rose reward__icon" aria-hidden="true">
@@ -9,31 +9,29 @@
         <p class="reward__copy">
           You earned {{ grantedCount }} new {{ grantedCount === 1 ? 'note' : 'notes' }}.
         </p>
-        <PrimaryButton @click="beginScratch">
+        <PrimaryButton class="reward__cta" @click="beginScratch">
           {{ grantedCount > 0 ? 'Scratch your notes' : 'Back to the map' }}
         </PrimaryButton>
       </GlassCard>
 
-      <GlassCard v-else-if="phase === 'scratch' && activeNote" class="reward__card reward__card--scratch">
+      <GlassCard v-else-if="phase === 'scratch' && activeNote" class="reward__card">
         <h2 class="reward__note-title">New note</h2>
-        <div class="reward__scratch">
-          <ScratchCard
-            :key="activeNote.id"
-            :note="activeNote"
-            :width="scratchW"
-            :height="180"
-            @reveal="onRevealed"
-          />
-        </div>
+        <ScratchCard
+          :key="activeNote.id"
+          :note="activeNote"
+          :width="scratchW"
+          :height="180"
+          @reveal="onRevealed"
+        />
         <p v-if="revealedHere" class="reward__body">{{ activeNote.text }}</p>
-        <PrimaryButton v-if="revealedHere" @click="nextCard">
+        <PrimaryButton v-if="revealedHere" class="reward__cta" @click="nextCard">
           {{ hasMore ? 'Next card' : 'Back to the map' }}
         </PrimaryButton>
       </GlassCard>
 
       <GlassCard v-else class="reward__card">
         <h1 class="reward__title">All set</h1>
-        <PrimaryButton @click="toMap">Back to the map</PrimaryButton>
+        <PrimaryButton class="reward__cta" @click="toMap">Back to the map</PrimaryButton>
       </GlassCard>
     </div>
   </section>
@@ -59,7 +57,7 @@ const levelId = ref(null)
 const queueIds = ref([])
 const cursor = ref(0)
 const revealedHere = ref(false)
-const scratchW = ref(280)
+const scratchW = ref(260)
 
 const grantedCount = computed(() => queueIds.value.length)
 const activeNote = computed(() => notes.find((n) => n.id === queueIds.value[cursor.value]) || null)
@@ -93,9 +91,13 @@ function toMap() {
   goTo('quest')
 }
 
+function measureScratch() {
+  // Card content width ≈ viewport minus screen + glass padding
+  scratchW.value = Math.min(280, Math.max(220, window.innerWidth - 72))
+}
+
 onMounted(() => {
-  // Fit inside glass padding + screen gutters so the coat stays centered
-  scratchW.value = Math.min(280, Math.max(200, window.innerWidth - 96))
+  measureScratch()
   const id = store.currentLevel
   levelId.value = id
   if (id) {
@@ -109,17 +111,29 @@ onMounted(() => {
 
 <style scoped>
 .reward {
+  position: relative;
+  z-index: 1;
   min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: calc(var(--space-5) + var(--safe-top)) var(--space-4) calc(var(--space-5) + var(--safe-bottom));
+  width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: calc(var(--space-5) + var(--safe-top) + 52px);
+  padding-right: calc(var(--space-4) + var(--safe-right));
+  padding-bottom: calc(var(--space-5) + var(--safe-bottom));
+  padding-left: calc(var(--space-4) + var(--safe-left));
   color: var(--color-night);
+  overflow-x: hidden;
 }
 
 .reward__inner {
-  width: 100%;
-  max-width: 360px;
+  width: min(100%, 340px);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
 }
 
 .reward__card {
@@ -128,17 +142,13 @@ onMounted(() => {
   align-items: center;
   gap: var(--space-3);
   text-align: center;
-}
-
-.reward__card--scratch {
-  align-items: stretch;
-}
-
-.reward__scratch {
   width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  box-sizing: border-box;
+}
+
+.reward__cta {
+  align-self: center;
+  max-width: 100%;
 }
 
 .reward__icon {

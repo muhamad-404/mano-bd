@@ -1,9 +1,6 @@
 <template>
-  <div class="scratch-wrap">
-    <div
-      class="scratch"
-      :style="{ width: '100%', maxWidth: `${width}px`, height: `${height}px` }"
-    >
+  <div class="scratch-wrap" :style="{ maxWidth: `${width}px` }">
+    <div class="scratch" :style="{ height: `${height}px` }">
       <div class="scratch__note no-select">
         <p class="scratch__text">{{ note.text }}</p>
       </div>
@@ -77,7 +74,9 @@ function setupCanvas() {
   if (!canvas || cleared.value) return
   const parent = canvas.parentElement
   const dpr = dprCap(2)
-  coatW = Math.max(1, Math.round(parent?.clientWidth || props.width))
+  const measured = parent?.clientWidth || 0
+  // Prefer laid-out width; fall back to prop if flex has not resolved yet
+  coatW = Math.max(1, Math.round(measured > 8 ? measured : props.width))
   coatH = Math.max(1, Math.round(props.height))
   canvas.width = Math.round(coatW * dpr)
   canvas.height = Math.round(coatH * dpr)
@@ -235,6 +234,10 @@ function onResize() {
 onMounted(async () => {
   await nextTick()
   setupCanvas()
+  // Second pass after flex/grid layout settles (avoids a collapsed coat width)
+  requestAnimationFrame(() => {
+    if (!revealed && !cleared.value) setupCanvas()
+  })
   armIdleReveal()
   window.addEventListener('resize', onResize, { passive: true })
   window.addEventListener('orientationchange', onResize, { passive: true })
@@ -265,14 +268,16 @@ onUnmounted(() => {
 .scratch-wrap {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: var(--space-3);
   width: 100%;
-  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
   box-sizing: border-box;
 }
 
 .scratch__reveal {
+  align-self: center;
   min-height: 44px;
   min-width: 120px;
   border: none;
@@ -286,9 +291,7 @@ onUnmounted(() => {
 
 .scratch {
   position: relative;
-  margin: 0 auto;
   width: 100%;
-  max-width: 100%;
   box-sizing: border-box;
   border-radius: var(--radius-md);
   overflow: hidden;

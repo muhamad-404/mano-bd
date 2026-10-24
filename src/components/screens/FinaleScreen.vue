@@ -63,29 +63,42 @@
         >{{ ch === ' ' ? '\u00A0' : ch }}</span>
       </div>
 
-      <GlassCard
+      <div
         v-if="stage === 'letter' || stage === 'done'"
-        class="finale__letter"
-        @click="skipTyping"
+        class="finale__letter-page"
       >
-        <h2 class="finale__letter-title">{{ letterTitle }}</h2>
-        <div ref="typedHost" class="finale__typed" />
-        <p v-show="showSignoff" class="finale__signoff">{{ signoff }}</p>
-        <div v-if="stage === 'done'" class="finale__actions stack">
-          <PrimaryButton @click="replay">{{ finale.replay }}</PrimaryButton>
+        <GlassCard class="finale__letter" @click="skipTyping">
+          <div ref="letterScroll" class="finale__letter-scroll" @scroll.passive="onLetterScroll">
+            <h2 class="finale__letter-title">{{ letterTitle }}</h2>
+            <div ref="typedHost" class="finale__typed" />
+            <p v-show="showSignoff" class="finale__signoff">{{ signoff }}</p>
+            <div v-if="stage === 'done'" class="finale__actions stack">
+              <PrimaryButton @click.stop="replay">{{ finale.replay }}</PrimaryButton>
+              <button
+                v-if="voiceAvailable"
+                type="button"
+                class="finale__voice"
+                @click.stop="toggleVoice"
+              >
+                <span class="fa-grad-gold" aria-hidden="true">
+                  <FaIcon :icon="['fas', voicePlaying ? 'volume-xmark' : 'music']" />
+                </span>
+                {{ voicePlaying ? finale.voiceNotePause : finale.voiceNoteButton }}
+              </button>
+            </div>
+          </div>
           <button
-            v-if="voiceAvailable"
+            v-if="showScrollHint"
             type="button"
-            class="finale__voice"
-            @click.stop="toggleVoice"
+            class="finale__scroll-hint"
+            aria-label="More of the letter below"
+            @click.stop="scrollLetterMore"
           >
-            <span class="fa-grad-gold" aria-hidden="true">
-              <FaIcon :icon="['fas', voicePlaying ? 'volume-xmark' : 'music']" />
-            </span>
-            {{ voicePlaying ? finale.voiceNotePause : finale.voiceNoteButton }}
+            <FaIcon :icon="['fas', 'chevron-down']" />
+            <span>More below</span>
           </button>
-        </div>
-      </GlassCard>
+        </GlassCard>
+      </div>
     </div>
   </section>
 </template>
@@ -122,6 +135,9 @@ const cakeWrap = ref(null)
 const confettiCanvas = ref(null)
 const titleEl = ref(null)
 const typedHost = ref(null)
+const letterScroll = ref(null)
+const showScrollHint = ref(false)
+let letterHintTimer = 0
 
 let micApi = null
 let listenHintTimer = null
@@ -316,9 +332,44 @@ async function revealTitle() {
   })
 }
 
+function updateScrollHint() {
+  const el = letterScroll.value
+  if (!el) {
+    showScrollHint.value = false
+    return
+  }
+  const remaining = el.scrollHeight - el.scrollTop - el.clientHeight
+  showScrollHint.value = remaining > 28
+}
+
+function onLetterScroll() {
+  updateScrollHint()
+}
+
+function scrollLetterMore() {
+  const el = letterScroll.value
+  if (!el) return
+  const step = Math.max(120, Math.round(el.clientHeight * 0.65))
+  el.scrollBy({ top: step, behavior: store.reducedMotion ? 'auto' : 'smooth' })
+  window.setTimeout(updateScrollHint, store.reducedMotion ? 0 : 320)
+}
+
+function armLetterHintWatch() {
+  clearInterval(letterHintTimer)
+  updateScrollHint()
+  letterHintTimer = window.setInterval(updateScrollHint, 400)
+}
+
+function stopLetterHintWatch() {
+  clearInterval(letterHintTimer)
+  letterHintTimer = 0
+  showScrollHint.value = false
+}
+
 async function startLetter() {
   stage.value = 'letter'
   showSignoff.value = false
+  showScrollHint.value = false
   await nextTick()
   const el = typedHost.value
   if (!el) {
@@ -332,8 +383,11 @@ async function startLetter() {
   }
 
   const full = paragraphs.join('\n\n')
+  armLetterHintWatch()
   if (store.reducedMotion) {
     el.textContent = full
+    await nextTick()
+    updateScrollHint()
     finishLetter()
     return
   }
@@ -356,7 +410,10 @@ function skipTyping() {
   if (typedHost.value) {
     typedHost.value.textContent = paragraphs.join('\n\n')
   }
-  finishLetter()
+  nextTick(() => {
+    updateScrollHint()
+    finishLetter()
+  })
 }
 
 function finishLetter() {
@@ -365,11 +422,13 @@ function finishLetter() {
   showSignoff.value = true
   stage.value = 'done'
   setFinaleSeen()
+  nextTick(updateScrollHint)
 }
 
 function replay() {
   stopVoice()
   stopMic()
+  stopLetterHintWatch()
   if (typed) {
     typed.destroy()
     typed = null
@@ -478,6 +537,7 @@ onUnmounted(() => {
   stopMic()
   stopVoice()
   clearStageTimers()
+  stopLetterHintWatch()
   if (listenHintTimer) clearTimeout(listenHintTimer)
   if (typed) {
     typed.destroy()
@@ -500,7 +560,18 @@ onUnmounted(() => {
 <style scoped>
 .finale {
   justify-content: flex-start;
-  padding-top: calc(var(--space-7) + var(--safe-top));
+  align-items: center;
+  align-self: stretch;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100dvh;
+  height: 100dvh;
+  max-height: 100dvh;
+  box-sizing: border-box;
+  padding-top: calc(var(--space-5) + var(--safe-top) + 52px);
+  padding-right: calc(var(--space-4) + var(--safe-right));
+  padding-bottom: calc(var(--space-4) + var(--safe-bottom));
+  padding-left: calc(var(--space-4) + var(--safe-left));
   background:
     radial-gradient(ellipse at 50% 0%, #3a2a66 0%, transparent 55%),
     linear-gradient(180deg, #1b1533 0%, #2a1f4d 55%, #1b1533 100%);
@@ -555,11 +626,14 @@ onUnmounted(() => {
   position: relative;
   z-index: 2;
   width: min(100%, 360px);
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-4);
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-self: stretch;
 }
 
 .finale__cake-wrap {
@@ -662,14 +736,78 @@ onUnmounted(() => {
   will-change: transform, opacity;
 }
 
+.finale__letter-page {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
 .finale__letter {
-  width: min(100%, 340px);
-  max-height: min(58dvh, 420px);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  max-height: none;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   color: var(--color-night);
   text-align: left;
-  margin-bottom: calc(var(--space-4) + var(--safe-bottom));
+  box-sizing: border-box;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.finale__letter-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: var(--space-5);
+  padding-bottom: calc(var(--space-5) + 56px);
+  box-sizing: border-box;
+}
+
+.finale__scroll-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  z-index: 3;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(27, 21, 51, 0.88);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(27, 21, 51, 0.25);
+  animation: finale-hint-bob 1.4s ease-in-out infinite;
+}
+
+.finale__scroll-hint span {
+  white-space: nowrap;
+}
+
+@keyframes finale-hint-bob {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(5px);
+  }
 }
 
 .finale__letter-title {
@@ -689,7 +827,7 @@ onUnmounted(() => {
   font-family: var(--font-letter);
   font-size: 1.15rem;
   line-height: 1.55;
-  min-height: 4em;
+  min-height: 12em;
 }
 
 .finale__signoff {
@@ -720,7 +858,8 @@ onUnmounted(() => {
 
 @media (prefers-reduced-motion: reduce) {
   .finale__star,
-  .finale__pulse {
+  .finale__pulse,
+  .finale__scroll-hint {
     animation: none;
   }
 }
