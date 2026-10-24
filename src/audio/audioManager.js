@@ -14,7 +14,7 @@ function store() {
 export function init() {
   if (bgm) return bgm
 
-  const src = `${import.meta.env.BASE_URL}audio/bgm.mp3`
+  const src = `${import.meta.env.BASE_URL}audio/blue.m4a`
   settlePromise = new Promise((resolve) => {
     bgm = new Howl({
       src: [src],
@@ -28,7 +28,7 @@ export function init() {
       onloaderror() {
         if (!warnedMissing) {
           warnedMissing = true
-          console.warn('[audio] bgm.mp3 missing or failed to load; UI will continue without music.')
+          console.warn('[audio] blue.m4a missing or failed to load; UI will continue without music.')
         }
         resolve('error')
       },
