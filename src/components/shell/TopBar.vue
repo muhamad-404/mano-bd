@@ -1,8 +1,9 @@
 <template>
   <header v-if="store.scene !== 'gate'" class="top-bar">
-    <div class="top-bar__left">
+    <div v-if="showHub" class="top-bar__left">
       <HubMenu />
     </div>
+    <div v-else class="top-bar__spacer" aria-hidden="true" />
     <div class="top-bar__right">
       <MuteButton />
     </div>
@@ -10,11 +11,17 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import MuteButton from './MuteButton.vue'
 import HubMenu from './HubMenu.vue'
 import { useGameStore } from '../../store/game.js'
 
 const store = useGameStore()
+
+/** Hub is hidden on finale/level/intro — do not keep an empty hit target over Back. */
+const showHub = computed(() =>
+  ['timeline', 'quest', 'keepsakes', 'envelopes', 'reward'].includes(store.scene),
+)
 </script>
 
 <style scoped>
@@ -41,5 +48,11 @@ const store = useGameStore()
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
+}
+
+.top-bar__spacer {
+  min-width: 44px;
+  min-height: 44px;
+  pointer-events: none;
 }
 </style>

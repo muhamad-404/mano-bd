@@ -5,11 +5,10 @@
     </div>
 
     <button
-      v-if="store.finaleSeen"
       type="button"
       class="finale__back"
-      aria-label="Back"
-      @click="goTo('intro')"
+      aria-label="Back to the quest"
+      @click="leaveFinale"
     >
       <FaIcon :icon="['fas', 'chevron-left']" />
     </button>
@@ -425,6 +424,17 @@ function finishLetter() {
   nextTick(updateScrollHint)
 }
 
+function leaveFinale() {
+  stopVoice()
+  stopMic()
+  stopLetterHintWatch()
+  if (typed) {
+    typed.destroy()
+    typed = null
+  }
+  goTo('quest')
+}
+
 function replay() {
   stopVoice()
   stopMic()
@@ -606,10 +616,10 @@ onUnmounted(() => {
 }
 
 .finale__back {
-  position: absolute;
+  position: fixed;
   top: calc(var(--space-3) + var(--safe-top));
   left: calc(var(--space-4) + var(--safe-left));
-  z-index: 8;
+  z-index: 25;
   width: 44px;
   height: 44px;
   border-radius: 999px;
